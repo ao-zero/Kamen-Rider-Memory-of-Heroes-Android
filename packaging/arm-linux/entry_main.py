@@ -237,7 +237,11 @@ def cmd_info(args: list[str]) -> int:
     cfg = acfg.load_android_config(data_dir, app_dir)
     gd = acfg.resolve_game_dir(cfg.get("game_dir", ""))
     sfo = sfo_parser.get_game_info(gd) if gd else {}
-    patch_st = indo_patcher.get_indo_patch_status(gd or Path(""), data_dir, patches_dir)
+    patch_st = indo_patcher.get_indo_patch_status(
+        gd if gd is not None else (data_dir / "__unset_game_dir__"),
+        data_dir,
+        patches_dir,
+    )
     runtime_bin = acfg.find_runtime_binary(app_dir, data_dir)
 
     if topic == "patches":
@@ -315,6 +319,13 @@ def main(argv: list[str]) -> int:
         cfg = acfg.load_android_config(data_dir, app_dir)
         gd = acfg.resolve_game_dir(cfg.get("game_dir", ""))
         print(str(gd) if gd else "")
+        return 0
+    if cmd == "get-key":
+        key = rest[0] if rest else ""
+        ini_arg = rest[1] if len(rest) > 1 else None
+        app_dir, data_dir, _ = _resolve_dirs(ini_arg)
+        cfg = acfg.load_android_config(data_dir, app_dir)
+        print(cfg.get(key, ""))
         return 0
 
     print(json.dumps({"error": f"unknown command: {cmd}"}))

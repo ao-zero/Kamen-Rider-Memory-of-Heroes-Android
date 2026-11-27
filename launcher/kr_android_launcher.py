@@ -372,8 +372,9 @@ class KRAndroidLauncher:
         return (info.get("TITLE_ID", "CUSA17374"), info.get("APP_VER", "01.00"))
 
     def _patch_status(self) -> dict:
-        gd = self._game_dir() or Path("")
-        return indo_patcher.get_indo_patch_status(gd, self.data_dir, self.patches_dir)
+        gd = self._game_dir()
+        target = gd if gd is not None else (self.data_dir / "__unset_game_dir__")
+        return indo_patcher.get_indo_patch_status(target, self.data_dir, self.patches_dir)
 
     def _append_log(self, message: str) -> None:
         stamp = datetime.now().strftime("%H:%M:%S")
@@ -685,8 +686,12 @@ class KRAndroidLauncher:
             side="left", padx=(0, self._s(8))
         )
 
-        patch_btn_lbl = self._tr("patch_on") if patch_st["applied"] else self._tr("patch_off")
-        patch_btn_kind = "success" if patch_st["applied"] else "secondary"
+        if self.patch_busy:
+            patch_btn_lbl = self._tr("patch_busy")
+            patch_btn_kind = "secondary"
+        else:
+            patch_btn_lbl = self._tr("patch_on") if patch_st["applied"] else self._tr("patch_off")
+            patch_btn_kind = "success" if patch_st["applied"] else "secondary"
         self._make_button(
             bar,
             patch_btn_lbl,
@@ -1054,17 +1059,30 @@ class KRAndroidLauncher:
             or (self.trophy_filter == "locked" and not item["unlocked"])
         ]
 
-        # Scrollable canvas list
+        # Scrollable canvas list (full-width inner frame + mousewheel scroll)
         outer = self._make_card(wrap)
         outer.pack(fill="both", expand=True)
         canvas = tk.Canvas(outer, bg=t["bg_card"], highlightthickness=0, bd=0)
         sb = tk.Scrollbar(outer, orient="vertical", command=canvas.yview)
         inner = tk.Frame(canvas, bg=t["bg_card"])
+        win_id = canvas.create_window((0, 0), window=inner, anchor="nw")
         inner.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=inner, anchor="nw")
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(win_id, width=e.width))
         canvas.configure(yscrollcommand=sb.set)
         canvas.pack(side="left", fill="both", expand=True)
         sb.pack(side="right", fill="y")
+
+        def _on_wheel(ev):
+            if ev.num == 4:
+                canvas.yview_scroll(-3, "units")
+            elif ev.num == 5:
+                canvas.yview_scroll(3, "units")
+            elif getattr(ev, "delta", 0):
+                canvas.yview_scroll(-1 if ev.delta > 0 else 1, "units")
+
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            canvas.bind(seq, _on_wheel)
+            inner.bind(seq, _on_wheel)
 
         for item in filtered:
             tier = item["type"]
@@ -1279,15 +1297,38 @@ class KRAndroidLauncher:
             return
 
         eboot = gd / "eboot.bin"
-        cmd = [str(runtime_bin), "-g", str(eboot.resolve()), "-f", "true"]
+        game_args = [str(runtime_bin), "-g", str(eboot.resolve()), "-f", "true"]
         if self.cfg.get("show_fps") == "true":
-            cmd.append("--show-fps")
+            game_args.append("--show-fps")
 
         env = dict(os.environ)
         env["HOME"] = str(self.data_dir.parent)
         env["XDG_DATA_HOME"] = str(self.data_dir / "bin" / "user")
         if self.cfg.get("video_backend", "auto") != "auto":
             env["SDL_VIDEODRIVER"] = self.cfg["video_backend"]
+
+        # Inside non-root Android nixport sandbox (/lib/ld-linux-aarch64.so.1 absent),
+        # invoke the bundled AArch64 binary explicitly via the rootfs dynamic loader.
+        fxd_root = Path(os.environ.get("FXD_ROOT", "/data/user/0/ro.cobrabm.fexdroid/files/rootfs"))
+        loader = fxd_root / "usr" / "lib" / "aarch64-linux-gnu" / "ld-linux-aarch64.so.1"
+        lib_parts = []
+        if (self.app_dir / "lib").is_dir():
+            lib_parts.append(str(self.app_dir / "lib"))
+        if (fxd_root / "usr" / "lib" / "aarch64-linux-gnu").is_dir():
+            lib_parts.append(str(fxd_root / "usr" / "lib" / "aarch64-linux-gnu"))
+        if env.get("LD_LIBRARY_PATH"):
+            lib_parts.append(env["LD_LIBRARY_PATH"])
+        if lib_parts:
+            env["LD_LIBRARY_PATH"] = ":".join(lib_parts)
+
+        if sys.platform != "win32" and not Path("/lib/ld-linux-aarch64.so.1").exists() and loader.is_file():
+            cmd = [str(loader), "--library-path", env.get("LD_LIBRARY_PATH", ""), *game_args]
+        else:
+            cmd = game_args
+
+        # Run from DATA_DIR/bin so shadPS4 activates portable mode (./user/)
+        run_cwd = self.data_dir / "bin"
+        run_cwd.mkdir(parents=True, exist_ok=True)
 
         log_path = acfg.get_log_dir(self.data_dir) / "launch.log"
         self._append_log(f"[LAUNCH] Executing: {' '.join(cmd)}")
@@ -1299,9 +1340,10 @@ class KRAndroidLauncher:
             try:
                 with open(log_path, "w", encoding="utf-8", errors="replace") as lf:
                     lf.write(f"=== Kamen Rider: Memory of Heroes Launch ({time.strftime('%Y-%m-%d %H:%M:%S')}) ===\n")
+                    lf.write(f"CWD: {run_cwd}\n")
                     lf.write(f"CMD: {' '.join(cmd)}\n\n")
                     lf.flush()
-                    proc = subprocess.Popen(cmd, cwd=str(self.data_dir), env=env, stdout=lf, stderr=subprocess.STDOUT)
+                    proc = subprocess.Popen(cmd, cwd=str(run_cwd), env=env, stdout=lf, stderr=subprocess.STDOUT)
                     rc = proc.wait()
             except Exception as exc:
                 self.root.after(0, lambda e=exc: self._append_log(f"[LAUNCH ERROR] {e}"))

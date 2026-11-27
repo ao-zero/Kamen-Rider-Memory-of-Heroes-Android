@@ -28,6 +28,6 @@
   "virtualKeys": "virtualkeys.json",
   "logs": [
     "home/kr_moh/logs/launch.log",
-    "home/kr_moh/bin/user/log/shadps4.log"
+    "home/kr_moh/bin/user/log/shad_log.txt"
   ]
 }

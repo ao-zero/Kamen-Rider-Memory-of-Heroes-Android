@@ -52,7 +52,9 @@ setup_env() {
     export KR_APP_DIR="$TREE"
     export KR_DATA_DIR="$DATA"
     export KR_CONFIG="$CONFIG"
-    export KR_DEVICE_UI="${KR_DEVICE_UI:-1}"
+    if [ -n "${FEXDROID_PRESENT:-}" ]; then
+        export KR_DEVICE_UI="${KR_DEVICE_UI:-1}"
+    fi
     export XDG_DATA_HOME="$DATA/bin/user"
     if [ -d "$TREE/lib" ]; then
         export LD_LIBRARY_PATH="$TREE/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
@@ -90,8 +92,19 @@ case "$VERB" in
             exit 3
         fi
         LOG_FILE="$DATA/logs/launch.log"
-        echo "[kr-moh] Launching $CORE_BIN -g $GAME_DIR/eboot.bin" >&2
-        exec_arm64_bin "$CORE_BIN" -g "$GAME_DIR/eboot.bin" -f true "$@" >"$LOG_FILE" 2>&1
+        SHOW_FPS="$(run_py "$TREE/entry_main.py" get-key show_fps "$CONFIG" || echo true)"
+        VID_DRV="$(run_py "$TREE/entry_main.py" get-key video_backend "$CONFIG" || echo auto)"
+        if [ -n "$VID_DRV" ] && [ "$VID_DRV" != "auto" ]; then
+            export SDL_VIDEODRIVER="$VID_DRV"
+        fi
+        # Run from $DATA/bin so shadPS4 detects portable ./user/ (config.json, input_config, savedata)
+        cd "$DATA/bin"
+        echo "[kr-moh] Launching $CORE_BIN -g $GAME_DIR/eboot.bin (cwd=$DATA/bin)" >&2
+        if [ "$SHOW_FPS" = "true" ]; then
+            exec_arm64_bin "$CORE_BIN" -g "$GAME_DIR/eboot.bin" -f true --show-fps "$@" >"$LOG_FILE" 2>&1
+        else
+            exec_arm64_bin "$CORE_BIN" -g "$GAME_DIR/eboot.bin" -f true "$@" >"$LOG_FILE" 2>&1
+        fi
         ;;
 
     info)

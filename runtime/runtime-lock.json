@@ -4,7 +4,7 @@
   "license": "GPL-2.0-or-later",
   "repository": "https://github.com/zenithblue-oss/shadps4-arm64.git",
   "branch": "main",
-  "commit": "be6bc2e9",
+  "commit": "be6bc2e9c60799e071dd2fafa6216e8d80ec619c",
   "features": {
     "ENABLE_FEX_GUEST_CPU": true,
     "ENABLE_BACHATA_RUNTIME": true,
