@@ -60,8 +60,8 @@ elif command -v docker >/dev/null 2>&1; then
         -w /workspace \
         "$builder_image" \
         bash -euo pipefail -c '
-            git config --global --add safe.directory "*"
             bash runtime/scripts/install-debian-runtime-deps.sh
+            git config --global --add safe.directory "*"
             bash runtime/scripts/build-shadps4-arm64.sh
         '
 else
