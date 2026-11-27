@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """
 ================================================================================
-  KAMEN RIDER: MEMORY OF HEROES (CUSA17374) — ANDROID ARM64 LAUNCHER (v1.0.0)
+  KAMEN RIDER: MEMORY OF HEROES (CUSA17374) | ANDROID ARM64 LAUNCHER (v1.0.0)
   Design: Clean Desktop / Mobile-Adaptive UI (Dark & Light Mode, XSEmu-inspired)
   Port Lead: AO Zero | Community Partner: Bakka Sub (https://www.bakkasub.my.id)
 ================================================================================
-Pure Python stdlib (tkinter) — zero external dependencies, runs natively inside
+Pure Python stdlib (tkinter) with zero external dependencies. Runs natively inside
 the nixport ARM64 Linux rootfs as well as Windows/Linux desktop for testing.
 """
 
@@ -306,7 +306,7 @@ class KRAndroidLauncher:
             f"[VULKAN] Async shader pipeline + mobile pool (1024MB DMEM / 512MB FMEM) synced.",
         ]
         if self.on_device:
-            self.log_lines.append("[NIXPORT] FEXDROID_PRESENT active — fullscreen touch mode & mouse_to_joystick=none.")
+            self.log_lines.append("[NIXPORT] FEXDROID_PRESENT active: fullscreen touch mode & mouse_to_joystick=none.")
 
         self._icon_small: tk.PhotoImage | None = None
         self._icon_poster: tk.PhotoImage | None = None
@@ -397,7 +397,7 @@ class KRAndroidLauncher:
             self._icon_poster = None
 
     def _configure_window(self) -> None:
-        self.root.title(f"Kamen Rider: Memory of Heroes — Android Port v{VERSION}")
+        self.root.title(f"Kamen Rider: Memory of Heroes (Android Port v{VERSION})")
         if self.on_device:
             sw = self.root.winfo_screenwidth()
             sh = self.root.winfo_screenheight()
@@ -1289,7 +1289,7 @@ class KRAndroidLauncher:
         assets_ok = (gd / "Media" / "sharedassets0.assets").is_file()
         sfo_ok = (gd / "sce_sys" / "param.sfo").is_file()
         title_id, app_ver = self._game_meta()
-        msg = f"[VERIFY] OK — {title_id} v{app_ver} | eboot.bin: OK | param.sfo: {'OK' if sfo_ok else 'MISSING'} | sharedassets0.assets: {'OK' if assets_ok else 'MISSING'}"
+        msg = f"[VERIFY] OK: {title_id} v{app_ver} | eboot.bin: OK | param.sfo: {'OK' if sfo_ok else 'MISSING'} | sharedassets0.assets: {'OK' if assets_ok else 'MISSING'}"
         self._append_log(msg)
 
     def _on_clear_cache(self) -> None:
@@ -1370,7 +1370,7 @@ class KRAndroidLauncher:
         acfg.sync_android_engine_config(self.data_dir, self.cfg)
         runtime_bin = acfg.find_runtime_binary(self.app_dir, self.data_dir)
         if runtime_bin is None:
-            self._append_log("[LAUNCH] ARM64 runtime binary (bin/kr_core) not bundled yet — config synced.")
+            self._append_log("[LAUNCH] ARM64 runtime binary (bin/kr_core) not bundled yet; config synced.")
             messagebox.showinfo(
                 self._tr("err_no_runtime_title"),
                 self._tr("err_no_runtime_msg", data_dir=str(self.data_dir)),

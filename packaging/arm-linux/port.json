@@ -4,7 +4,7 @@
   "name": "Kamen Rider: Memory of Heroes",
   "version": "1.0.0",
   "appimage": "KamenRiderMoH-arm64.AppImage",
-  "description": "Kamen Rider: Memory of Heroes (CUSA17374) ARM64 Android Port by AO Zero & Bakka Sub — FEXCore + shadPS4 Vulkan 1.3 + Built-in Patch Bahasa Indonesia (5,993 strings).",
+  "description": "Kamen Rider: Memory of Heroes (CUSA17374) ARM64 Android Port by AO Zero & Bakka Sub (FEXCore + shadPS4 Vulkan 1.3 + Built-in Indonesian Subtitle Patch, 5,993 strings).",
   "upstream": "https://github.com/ao-zero/Kamen-Rider-Memory-of-Heroes-Android",
   "entries": [
     {

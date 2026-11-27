@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 """
-entry_main.py — JSON contract handler for `entry.sh` verbs (`config`, `info`, `check`, `sync`).
+entry_main.py: JSON contract handler for `entry.sh` verbs (`config`, `info`, `check`, `sync`).
 Modeled after zFitness/gow3_android `packaging/arm-linux/entry_main.py` so the nixport
 Android host app can inspect port metadata and render dynamic configuration cards.
 
@@ -156,7 +156,7 @@ def _build_schema(cfg: dict, data_dir: Path, patches_dir: Path) -> dict:
                 "items": [
                     {
                         "key": "indo_patch",
-                        "title": f"Bahasa Indonesia — Bakka Sub ({st['translated_count']} strings)",
+                        "title": f"Bahasa Indonesia (Bakka Sub, {st['translated_count']} strings)",
                         "type": "boolean",
                         "default": False,
                         "restart": True,

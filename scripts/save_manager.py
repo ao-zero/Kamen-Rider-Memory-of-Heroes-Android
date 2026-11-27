@@ -30,12 +30,12 @@ def get_save_slots(base_dir: Path) -> list:
     # Known folders in KR Memory of Heroes
     friendly_names = {
         "KmrSave": "System Settings & Profile Save",
-        "KmrSaveGame0": "Story Progress — Slot 1",
-        "KmrSaveGame1": "Story Progress — Slot 2",
-        "KmrSaveGame2": "Story Progress — Slot 3",
-        "KmrSaveGame3": "Story Progress — Slot 4",
-        "KmrSaveGame4": "Story Progress — Slot 5",
-        "KmrSaveGame5": "Story Progress — Slot 6",
+        "KmrSaveGame0": "Story Progress (Slot 1)",
+        "KmrSaveGame1": "Story Progress (Slot 2)",
+        "KmrSaveGame2": "Story Progress (Slot 3)",
+        "KmrSaveGame3": "Story Progress (Slot 4)",
+        "KmrSaveGame4": "Story Progress (Slot 5)",
+        "KmrSaveGame5": "Story Progress (Slot 6)",
         "KmrSaveGame6": "Autosave / Checkpoint",
     }
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Kamen Rider: Memory of Heroes (CUSA17374) — nixport Runtime Verb Contract
+# Kamen Rider: Memory of Heroes (CUSA17374) | nixport Runtime Verb Contract
 # Supported verbs: launcher | game | info | config | check | vulkan
 # Rule: stdout MUST be pure JSON for `config` and `info`; diagnostics go to stderr.
 set -eu
