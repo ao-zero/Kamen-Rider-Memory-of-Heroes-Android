@@ -1,0 +1,17 @@
+{
+  "schema": "kr-moh.runtime-lock.v1",
+  "engine": "shadps4-arm64",
+  "license": "GPL-2.0-or-later",
+  "repository": "https://github.com/zenithblue-oss/shadps4-arm64.git",
+  "branch": "main",
+  "commit": "be6bc2e9",
+  "features": {
+    "ENABLE_FEX_GUEST_CPU": true,
+    "ENABLE_BACHATA_RUNTIME": true,
+    "ENABLE_USERFAULTFD": false,
+    "SDL_WAYLAND": false
+  },
+  "builder_image": "debian:trixie",
+  "target_arch": "aarch64-linux-gnu",
+  "notes": "Native AArch64 shadPS4 Vulkan 1.3 + FEXCore guest x86-64 CPU backend targeting nixport Debian Trixie ARM64 rootfs."
+}

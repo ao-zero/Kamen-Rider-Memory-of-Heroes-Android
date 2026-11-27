@@ -1,0 +1,33 @@
+{
+  "schema": "nixport.port.v1",
+  "id": "kamen-rider-moh",
+  "name": "Kamen Rider: Memory of Heroes",
+  "version": "1.0.0",
+  "appimage": "KamenRiderMoH-arm64.AppImage",
+  "description": "Kamen Rider: Memory of Heroes (CUSA17374) ARM64 Android Port by AO Zero & Bakka Sub — FEXCore + shadPS4 Vulkan 1.3 + Built-in Patch Bahasa Indonesia (5,993 strings).",
+  "upstream": "https://github.com/ao-zero/Kamen-Rider-Memory-of-Heroes-Android",
+  "entries": [
+    {
+      "id": "launcher",
+      "name": "KR Memory of Heroes Launcher",
+      "kind": "launcher",
+      "command": "AppRun launcher",
+      "desc": "Atur folder CUSA17374, resolusi 540p/720p/1080p, 30/60 FPS, dan Patch Bahasa Indonesia (Bakka Sub)"
+    },
+    {
+      "id": "game",
+      "name": "Direct Launch (CUSA17374)",
+      "kind": "game",
+      "command": "AppRun game",
+      "desc": "Langsung jalankan game menggunakan konfigurasi tersimpan di home/kr_moh/launcher.ini"
+    }
+  ],
+  "storage": {
+    "home": "home"
+  },
+  "virtualKeys": "virtualkeys.json",
+  "logs": [
+    "home/kr_moh/logs/launch.log",
+    "home/kr_moh/bin/user/log/shadps4.log"
+  ]
+}

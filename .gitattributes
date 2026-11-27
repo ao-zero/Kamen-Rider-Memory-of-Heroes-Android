@@ -1,0 +1,11 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Enforce LF on Linux/Android scripts, AppRun, Python, CMake, YAML, and JSON
+*.sh text eol=lf
+AppRun text eol=lf
+*.py text eol=lf
+*.cmake text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf

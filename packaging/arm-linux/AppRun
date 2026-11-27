@@ -1,0 +1,6 @@
+#!/bin/sh
+# Kamen Rider: Memory of Heroes (CUSA17374) — nixport AppRun entrypoint
+# Self-derives APPDIR when launched outside the host wrapper and delegates to entry.sh.
+APPDIR="${APPDIR:-$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
+export APPDIR
+exec "$APPDIR/entry.sh" "$@"

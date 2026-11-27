@@ -1,0 +1,38 @@
+# Internal planning notes
+ANDROID_IMPLEMENTATION_PLAN.md
+
+# Build artifacts & cross-compile sysroot
+.local-deps/
+out/
+dist/
+build/
+fexdroid/
+packaging/arm-linux/dist/
+packaging/arm-linux/build/
+
+# Packaged archives & AppImages
+*.AppImage
+*.zip
+*.tar.gz
+*.sha256
+*.pkg
+
+# User game dumps & runtime data (NEVER commit copyrighted PS4 assets)
+CUSA*/
+eboot.bin
+sharedassets0.assets
+launcher.ini
+bin/user/
+saves_backup/
+logs/
+
+# Python caches & editors
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

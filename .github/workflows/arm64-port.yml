@@ -1,0 +1,118 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# ARM64 Android Port Package CI (nixport.port.v1)
+# Builds native ARM64 shadPS4 + FEXCore guest CPU runtime (Phase 4) inside Debian Trixie,
+# bundles Clean UI v1.0.0 Launcher + 5,993-line Bakka Sub Indonesian Patch into a Type-2
+# ARM64 AppImage, and publishes KamenRiderMoH.nixport.<version>.zip + .sha256.
+
+name: ARM64 port package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      build_runtime:
+        description: Build native ARM64 shadPS4 + FEXCore runtime (disable for fast launcher-only test)
+        required: false
+        default: true
+        type: boolean
+      tag:
+        description: Optional existing tag to attach the built package to (leave empty for artifact only)
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: arm64-port-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Verify Python scripts, JSON contracts, and LF line endings
+        run: |
+          python3 -m py_compile \
+            scripts/android_config.py \
+            scripts/indo_patcher.py \
+            scripts/save_manager.py \
+            scripts/sfo_parser.py \
+            scripts/trophy_manager.py \
+            launcher/kr_android_launcher.py \
+            packaging/arm-linux/entry_main.py \
+            packaging/arm-linux/fetch-sysroot.py
+          python3 -m json.tool packaging/arm-linux/port.json >/dev/null
+          python3 -m json.tool packaging/arm-linux/virtualkeys.json >/dev/null
+          python3 -m json.tool runtime/runtime-lock.json >/dev/null
+          python3 -m json.tool patches/id_patch.json >/dev/null
+
+      - name: Install host packaging tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends squashfs-tools curl git python3 binutils
+
+      - name: Fetch nixport host packaging tools (if published)
+        env:
+          GIT_TERMINAL_PROMPT: 0
+        run: |
+          set -euxo pipefail
+          dest="$GITHUB_WORKSPACE/fexdroid"
+          rm -rf "$dest"
+          mkdir -p "$dest"
+          curl -fsSL --retry 3 --retry-delay 5 https://codeload.github.com/zFitness/nixport/tar.gz/refs/heads/main \
+            | tar xz -C "$dest" --strip-components=1 || true
+          chmod +x "$dest"/scripts/*.sh 2>/dev/null || true
+
+      - name: Build Phase 4 native ARM64 shadPS4 + FEXCore runtime (Debian Trixie)
+        if: ${{ github.event_name == 'push' || inputs.build_runtime != false }}
+        run: bash packaging/arm-linux/build-runtime.sh
+
+      - name: Assemble Type-2 ARM64 AppImage & strict nixport.port.v1 archive
+        env:
+          KR_HOST_TOOLS: ${{ github.workspace }}/fexdroid
+          KR_BUILD_RUNTIME: '0'
+        run: bash packaging/arm-linux/build.sh
+
+      - name: Name release archive & compute SHA-256
+        id: package
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('packaging/arm-linux/port.json'))['version'])")
+          mkdir -p dist
+          pkg_name="KamenRiderMoH.nixport.${version}.zip"
+          cp packaging/arm-linux/dist/kamen-rider-moh-port.zip "dist/${pkg_name}"
+          (cd dist && sha256sum "${pkg_name}" > "${pkg_name}.sha256")
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "pkg_name=${pkg_name}" >> "$GITHUB_OUTPUT"
+          ls -lh dist/
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KamenRiderMoH-nixport-${{ steps.package.outputs.version }}
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          retention-days: 30
+
+      - name: Attach assets to GitHub Release (on tag push or manual tag input)
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/*.zip dist/*.sha256 --clobber
+          else
+            gh release create "$tag" dist/*.zip dist/*.sha256 \
+              --title "Kamen Rider: Memory of Heroes Android Port ${tag}" \
+              --notes "ARM64 Android nixport package: native ARM64 shadPS4 + FEXCore guest CPU + Clean UI v1.0.0 Launcher + Built-in Patch Bahasa Indonesia (5,993 strings by AO Zero & Bakka Sub)."
+          fi
