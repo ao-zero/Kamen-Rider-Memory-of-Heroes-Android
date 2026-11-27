@@ -12,10 +12,6 @@
   <img src="https://img.shields.io/badge/License-GPL--2.0-blue?style=for-the-badge" alt="License" />
 </p>
 
-> **Edisi Proyek Kamen Rider: Memory of Heroes (AO Zero & Bakka Sub):**
-> - **PC Native Edition (Windows x64):** https://github.com/ao-zero/Kamen-Rider-Memory-of-Heroes-PC
-> - **Android ARM64 Port (`nixport` Edition — Repo Ini):** https://github.com/ao-zero/Kamen-Rider-Memory-of-Heroes-Android
-
 ---
 
 ## Edisi Tersedia (PC & Android)
