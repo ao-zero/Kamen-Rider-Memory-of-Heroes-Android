@@ -288,7 +288,9 @@ class KRAndroidLauncher:
         self.patches_dir = acfg.get_patches_dir(self.app_dir)
         self.assets_dir = acfg.get_assets_dir(self.app_dir)
         self.on_device = acfg.is_nixport_device()
-        self.scale = 1.25 if self.on_device else 1.0
+        self.scale = self._compute_scale()
+        self._active_wheel_canvas: tk.Canvas | None = None
+        self._patch_progress_text = ""
 
         self.cfg = acfg.load_android_config(self.data_dir, self.app_dir)
         acfg.sync_android_engine_config(self.data_dir, self.cfg)
@@ -314,8 +316,56 @@ class KRAndroidLauncher:
         self._build_ui()
 
     # ------------------------------------------------------------------ Helpers
+    def _compute_scale(self) -> float:
+        if not self.on_device:
+            return 1.0
+        sh = max(480, self.root.winfo_screenheight())
+        if sh <= 600:
+            return 0.85
+        if sh <= 800:
+            return 1.0
+        if sh <= 1150:
+            return 1.12
+        return 1.22
+
     def _s(self, px: int) -> int:
         return max(1, int(round(px * self.scale)))
+
+    def _make_scroll_area(self, parent: tk.Frame, bg: str) -> tuple[tk.Canvas, tk.Frame]:
+        """Reusable full-width scrollable container with global mousewheel support."""
+        canvas = tk.Canvas(parent, bg=bg, highlightthickness=0, bd=0, width=1, height=1)
+        sb = tk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        inner = tk.Frame(canvas, bg=bg)
+        win_id = canvas.create_window((0, 0), window=inner, anchor="nw")
+        inner.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(win_id, width=e.width))
+        canvas.configure(yscrollcommand=sb.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        self._bind_wheel_canvas(canvas)
+        return canvas, inner
+
+    def _bind_wheel_canvas(self, canvas: tk.Canvas) -> None:
+        self._active_wheel_canvas = canvas
+
+        def _on_wheel(ev):
+            c = self._active_wheel_canvas
+            if c is None or not c.winfo_exists():
+                return
+            if ev.num == 4:
+                c.yview_scroll(-3, "units")
+            elif ev.num == 5:
+                c.yview_scroll(3, "units")
+            elif getattr(ev, "delta", 0):
+                c.yview_scroll(-1 if ev.delta > 0 else 1, "units")
+
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            self.root.bind_all(seq, _on_wheel)
+
+    def _unbind_wheel_canvas(self) -> None:
+        self._active_wheel_canvas = None
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            self.root.unbind_all(seq)
 
     def _font(self, size: int, bold: bool = False, mono: bool = False):
         family = "DejaVu Sans Mono" if mono else ("Segoe UI" if sys.platform == "win32" else "DejaVu Sans")
@@ -396,6 +446,7 @@ class KRAndroidLauncher:
     # ------------------------------------------------------------------ UI Build
     def _build_ui(self) -> None:
         t = self._t()
+        self._unbind_wheel_canvas()
         for child in self.root.winfo_children():
             child.destroy()
 
@@ -613,6 +664,7 @@ class KRAndroidLauncher:
         self._build_ui()
 
     def _render_active_tab(self) -> None:
+        self._unbind_wheel_canvas()
         for child in self.viewport.winfo_children():
             child.destroy()
 
@@ -785,7 +837,8 @@ class KRAndroidLauncher:
             highlightthickness=1,
             highlightbackground=t["border"],
             wrap="word",
-            height=6,
+            width=1,
+            height=4,
             padx=self._s(8),
             pady=self._s(6),
         )
@@ -932,10 +985,14 @@ class KRAndroidLauncher:
         pill_bg = t["green_bg"] if st["applied"] else t["bg_pill"]
         self._make_pill(top, pill_txt, fg=pill_fg, bg=pill_bg).pack(side="right")
 
+        def _short_path(p: Path, maxlen: int = 44) -> str:
+            s = str(p)
+            return ("..." + s[-(maxlen - 3):]) if len(s) > maxlen else s
+
         meta_lines = [
-            f"Patch Dictionary : {self.patches_dir / 'id_patch.json'} ({'OK' if st['patch_available'] else 'MISSING'})",
+            f"Patch Dictionary : {_short_path(self.patches_dir / 'id_patch.json')} ({'OK' if st['patch_available'] else 'MISSING'})",
             f"Target Asset     : CUSA17374/Media/sharedassets0.assets ({'FOUND' if st['game_found'] else 'SELECT GAME FOLDER'})",
-            f"Vanilla Backup   : {indo_patcher.get_backup_dir(self.data_dir)} ({'SAVED' if st['backup_exists'] else 'AUTO ON APPLY'})",
+            f"Vanilla Backup   : {_short_path(indo_patcher.get_backup_dir(self.data_dir))} ({'SAVED' if st['backup_exists'] else 'AUTO ON APPLY'})",
         ]
         tk.Label(
             card,
@@ -945,6 +1002,7 @@ class KRAndroidLauncher:
             font=self._font(8, mono=True),
             justify="left",
             anchor="w",
+            wraplength=self._s(600),
             padx=self._s(10),
             pady=self._s(8),
             highlightthickness=1,
@@ -957,10 +1015,23 @@ class KRAndroidLauncher:
             bg=t["bg_card"],
             fg=t["text_muted"],
             font=self._font(8),
-            wraplength=self._s(740),
+            wraplength=self._s(600),
             justify="left",
             anchor="w",
-        ).pack(fill="x", pady=(0, self._s(14)))
+        ).pack(fill="x", pady=(0, self._s(12)))
+
+        if self._patch_progress_text:
+            self.patch_progress_lbl = tk.Label(
+                card,
+                text=self._patch_progress_text,
+                bg=t["bg_card"],
+                fg=t["amber_text"] if self.patch_busy else t["green_text"],
+                font=self._font(8, mono=True),
+                wraplength=self._s(600),
+                justify="left",
+                anchor="w",
+            )
+            self.patch_progress_lbl.pack(fill="x", pady=(0, self._s(10)))
 
         btns = tk.Frame(card, bg=t["bg_card"])
         btns.pack(fill="x")
@@ -1059,30 +1130,10 @@ class KRAndroidLauncher:
             or (self.trophy_filter == "locked" and not item["unlocked"])
         ]
 
-        # Scrollable canvas list (full-width inner frame + mousewheel scroll)
+        # Scrollable canvas list (full-width inner frame + global mousewheel scroll)
         outer = self._make_card(wrap)
         outer.pack(fill="both", expand=True)
-        canvas = tk.Canvas(outer, bg=t["bg_card"], highlightthickness=0, bd=0)
-        sb = tk.Scrollbar(outer, orient="vertical", command=canvas.yview)
-        inner = tk.Frame(canvas, bg=t["bg_card"])
-        win_id = canvas.create_window((0, 0), window=inner, anchor="nw")
-        inner.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(win_id, width=e.width))
-        canvas.configure(yscrollcommand=sb.set)
-        canvas.pack(side="left", fill="both", expand=True)
-        sb.pack(side="right", fill="y")
-
-        def _on_wheel(ev):
-            if ev.num == 4:
-                canvas.yview_scroll(-3, "units")
-            elif ev.num == 5:
-                canvas.yview_scroll(3, "units")
-            elif getattr(ev, "delta", 0):
-                canvas.yview_scroll(-1 if ev.delta > 0 else 1, "units")
-
-        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
-            canvas.bind(seq, _on_wheel)
-            inner.bind(seq, _on_wheel)
+        _canvas, inner = self._make_scroll_area(outer, t["bg_card"])
 
         for item in filtered:
             tier = item["type"]
@@ -1109,8 +1160,12 @@ class KRAndroidLauncher:
     # ------------------------------------------------------------------ TAB 5: SETTINGS
     def _build_tab_settings(self) -> None:
         t = self._t()
-        wrap = tk.Frame(self.viewport, bg=t["bg_canvas"])
-        wrap.pack(fill="both", expand=True, padx=self._s(18), pady=self._s(16))
+        scroll_host = tk.Frame(self.viewport, bg=t["bg_canvas"])
+        scroll_host.pack(fill="both", expand=True)
+        _canvas, sc_inner = self._make_scroll_area(scroll_host, t["bg_canvas"])
+
+        wrap = tk.Frame(sc_inner, bg=t["bg_canvas"])
+        wrap.pack(fill="both", expand=True, padx=self._s(18), pady=self._s(14))
 
         tk.Label(wrap, text=self._tr("settings_title"), bg=t["bg_canvas"], fg=t["text_primary"], font=self._font(14, bold=True), anchor="w").pack(fill="x")
         tk.Label(wrap, text=self._tr("settings_sub"), bg=t["bg_canvas"], fg=t["text_secondary"], font=self._font(9), anchor="w").pack(fill="x", pady=(self._s(2), self._s(12)))
@@ -1145,6 +1200,20 @@ class KRAndroidLauncher:
             [("auto", "Auto"), ("x11", "X11"), ("wayland", "Wayland")],
             self.cfg["video_backend"],
             lambda v: self._set_quick_setting("video_backend", v),
+        )
+        self._override_row(
+            c_gfx,
+            self._tr("lbl_volume"),
+            [("0", "Mute"), ("25", "25%"), ("50", "50%"), ("75", "75%"), ("100", "100%")],
+            self.cfg["audio_volume"],
+            lambda v: self._set_quick_setting("audio_volume", v),
+        )
+        self._override_row(
+            c_gfx,
+            self._tr("lbl_deadzone"),
+            [("5", "5%"), ("8", "8%"), ("12", "12%"), ("15", "15%"), ("20", "20%")],
+            self.cfg["deadzone"],
+            lambda v: self._set_quick_setting("deadzone", v),
         )
 
         c_sys = self._make_card(wrap)
@@ -1241,12 +1310,17 @@ class KRAndroidLauncher:
     def _on_restore_selected(self) -> None:
         if not self.selected_backup:
             return
+        if not messagebox.askyesno(
+            "Restore Save Backup",
+            f"Restore save data from:\n{self.selected_backup}\n\n(A safety backup of your current saves will be created first.)",
+        ):
+            return
         res = save_manager.restore_backup(self.data_dir, self.selected_backup)
         self._append_log(f"[SAVE] {res['message']}")
         self._render_active_tab()
 
     def _trigger_indo_patch(self, enable: bool) -> None:
-        if self.patch_busy:
+        if self.patch_busy or self.game_running:
             return
         gd = self._game_dir()
         if gd is None:
@@ -1254,11 +1328,17 @@ class KRAndroidLauncher:
             return
 
         self.patch_busy = True
+        self._patch_progress_text = self._tr("patch_busy")
         self._build_ui()
 
         def worker() -> None:
             def cb(msg: str) -> None:
-                self.root.after(0, lambda m=msg: self._append_log(m))
+                def _ui_update(m=msg):
+                    self._patch_progress_text = m
+                    self._append_log(m)
+                    if hasattr(self, "patch_progress_lbl") and self.patch_progress_lbl.winfo_exists():
+                        self.patch_progress_lbl.configure(text=m)
+                self.root.after(0, _ui_update)
 
             try:
                 if enable:
@@ -1275,11 +1355,12 @@ class KRAndroidLauncher:
 
     def _finish_patch(self, res: dict) -> None:
         self.patch_busy = False
-        self._append_log(f"[PATCH-ID] {res.get('message', '')}")
+        self._patch_progress_text = res.get("message", "")
+        self._append_log(f"[PATCH-ID] {self._patch_progress_text}")
         self._build_ui()
 
     def _on_play(self) -> None:
-        if self.game_running:
+        if self.game_running or self.patch_busy:
             return
         gd = self._game_dir()
         if gd is None:

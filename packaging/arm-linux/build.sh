@@ -103,7 +103,7 @@ elif command -v mksquashfs >/dev/null 2>&1; then
     fi
     sqfs_tmp="$out_root/payload.squashfs"
     rm -f "$sqfs_tmp" "$appimage_path"
-    mksquashfs "$appdir" "$sqfs_tmp" -root-owned -noappend -comp zstd -quiet
+    mksquashfs "$appdir" "$sqfs_tmp" -root-owned -noappend -comp gzip -quiet
     if [[ -s "$rt_cache" ]]; then
         cat "$rt_cache" "$sqfs_tmp" > "$appimage_path"
     else
