@@ -321,7 +321,7 @@ class KRAndroidLauncher:
             return 1.0
         sh = max(480, self.root.winfo_screenheight())
         if sh <= 600:
-            return 0.85
+            return 0.78
         if sh <= 800:
             return 1.0
         if sh <= 1150:
