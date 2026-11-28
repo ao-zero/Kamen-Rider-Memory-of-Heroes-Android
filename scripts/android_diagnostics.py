@@ -158,11 +158,50 @@ def recommend_mobile_preset(hw: dict) -> dict:
     }
 
 
+def _probe_vulkan_driver() -> tuple[str, bool]:
+    """Run fast vulkaninfo --summary if available to verify Vulkan 1.3 / Turnip is active."""
+    fxd_root = Path(os.environ.get("FXD_ROOT", "/data/user/0/ro.cobrabm.fexdroid/files/rootfs"))
+    vkinfo = shutil.which("vulkaninfo")
+    loader = fxd_root / "usr" / "lib" / "aarch64-linux-gnu" / "ld-linux-aarch64.so.1"
+    fxd_vkinfo = fxd_root / "usr" / "bin" / "vulkaninfo"
+
+    cmd = None
+    env = dict(os.environ)
+    env.pop("LD_PRELOAD", None)
+    if fxd_vkinfo.is_file() and loader.is_file():
+        lib_dir = str(fxd_root / "usr" / "lib" / "aarch64-linux-gnu")
+        env["LD_LIBRARY_PATH"] = f"{lib_dir}:{env.get('LD_LIBRARY_PATH', '')}".rstrip(":")
+        cmd = [str(loader), str(fxd_vkinfo), "--summary"]
+    elif vkinfo:
+        cmd = [vkinfo, "--summary"]
+
+    if not cmd:
+        return ("", True)
+
+    try:
+        out = subprocess.check_output(cmd, stderr=subprocess.STDOUT, env=env, timeout=2.5).decode("utf-8", "replace")
+        api_ver = ""
+        drv_name = ""
+        for line in out.splitlines():
+            s = line.strip()
+            if s.startswith("apiVersion") and "=" in s:
+                api_ver = s.split("=", 1)[1].strip().split()[-1].strip("()")
+            elif s.startswith("driverName") and "=" in s:
+                drv_name = s.split("=", 1)[1].strip()
+        if drv_name or api_ver:
+            ok_13 = not api_ver.startswith(("1.0", "1.1", "1.2"))
+            return (f"{drv_name or 'Vulkan'} ({api_ver or 'active'})".strip(), ok_13)
+    except Exception:
+        pass
+    return ("", True)
+
+
 def detect_device_hardware(data_dir: Path) -> dict:
     """Collect a safe cross-platform hardware summary for Android/Linux/Windows testing."""
     soc, device = _detect_soc_and_device()
     ram_gb = _read_ram_gb()
     icds = _detect_vulkan_icds()
+    vk_probe_label, vk_13_ok = _probe_vulkan_driver()
 
     try:
         usage = shutil.disk_usage(str(data_dir))
@@ -172,12 +211,17 @@ def detect_device_hardware(data_dir: Path) -> dict:
     except Exception:
         disk_text = "Unknown"
 
-    turnip_active = any("turnip" in i.lower() or "freedreno" in i.lower() for i in icds)
-    vulkan_summary = (
-        "Turnip / Freedreno ICD detected"
-        if turnip_active
-        else (f"{len(icds)} Vulkan ICD(s) detected" if icds else "Host Vulkan Bridge")
+    turnip_active = any("turnip" in i.lower() or "freedreno" in i.lower() for i in icds) or (
+        "turnip" in vk_probe_label.lower()
     )
+    if vk_probe_label:
+        vulkan_summary = vk_probe_label
+    elif turnip_active:
+        vulkan_summary = "Turnip / Freedreno ICD detected"
+    elif icds:
+        vulkan_summary = f"{len(icds)} Vulkan ICD(s) detected"
+    else:
+        vulkan_summary = "Host Vulkan Bridge"
 
     hw = {
         "device": device,
@@ -187,6 +231,7 @@ def detect_device_hardware(data_dir: Path) -> dict:
         "os": f"{platform.system()} {platform.release()}",
         "disk_free": disk_text,
         "vulkan_summary": vulkan_summary,
+        "vulkan_13_ok": vk_13_ok,
         "vulkan_icds": icds,
         "turnip_detected": turnip_active,
         "fexdroid_present": bool(os.environ.get("FEXDROID_PRESENT")),

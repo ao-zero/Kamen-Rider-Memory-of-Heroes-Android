@@ -62,8 +62,8 @@ FPS_ALIASES: Dict[str, str] = {
 }
 
 VSYNC_OPTIONS = (
-    "Mailbox",
     "Fifo",
+    "Mailbox",
     "Immediate",
 )
 
@@ -74,7 +74,7 @@ DEVICE_DEFAULTS: Dict[str, str] = {
     "show_fps": "true",
     "fsr_enabled": "true",
     "async_shaders": "true",
-    "vsync_mode": "Mailbox",
+    "vsync_mode": "Fifo",
     "video_backend": "auto",
     "audio_volume": "100",
     "deadzone": "8",
@@ -261,8 +261,8 @@ def normalize_config(cfg: Dict[str, str]) -> Dict[str, str]:
     elif fps_val not in FPS_VBLANK_MAP:
         out["fps"] = DEVICE_DEFAULTS["fps"]
 
-    vsync = out.get("vsync_mode", "Mailbox")
-    matched_vsync = next((v for v in VSYNC_OPTIONS if v.lower() == vsync.lower()), "Mailbox")
+    vsync = out.get("vsync_mode", "Fifo")
+    matched_vsync = next((v for v in VSYNC_OPTIONS if v.lower() == vsync.lower()), "Fifo")
     out["vsync_mode"] = matched_vsync
 
     lang_map = {k.lower(): k for k in SUPPORTED_LANGUAGES}
@@ -341,35 +341,75 @@ def save_android_config(data_dir: Optional[Path], cfg: Dict[str, str]) -> Dict[s
     return normalized
 
 
-def sync_android_engine_config(data_dir: Optional[Path], cfg: Dict[str, str]) -> Path:
-    """Write mobile-optimized shadPS4 config.json & input_config under DATA_DIR."""
+def _detect_total_ram_gb() -> float:
+    meminfo = Path("/proc/meminfo")
+    if meminfo.is_file():
+        try:
+            for line in meminfo.read_text(encoding="utf-8", errors="ignore").splitlines():
+                if line.startswith("MemTotal:"):
+                    kb = int(line.split()[1])
+                    return round(kb / (1024 * 1024), 1)
+        except Exception:
+            pass
+    return 8.0
+
+
+def sync_android_engine_config(
+    data_dir: Optional[Path],
+    cfg: Dict[str, str],
+    window_size: Optional[Tuple[int, int]] = None,
+) -> Path:
+    """Write mobile-optimized shadPS4 config.json & input_config under DATA_DIR (6-layer Anti-Black-Screen)."""
     d = ensure_data_layout(data_dir)
     normalized = normalize_config(cfg)
     cfg_path = get_engine_config_path(d)
 
     int_w, int_h = RES_PRESETS.get(normalized["resolution"], (1280, 720))
+    if window_size and window_size[0] >= 640 and window_size[1] >= 360:
+        win_w, win_h = int(window_size[0]), int(window_size[1])
+    else:
+        win_w, win_h = (1760, 720) if is_nixport_device() else (int_w, int_h)
+
     target_vblank = FPS_VBLANK_MAP.get(normalized["fps"], 120)
     show_fps = normalized["show_fps"] == "true"
     fsr_enabled = normalized["fsr_enabled"] == "true" or normalized["resolution"].startswith("540p")
     async_shaders = normalized["async_shaders"] == "true"
     volume = int(normalized["audio_volume"])
     on_device = is_nixport_device()
+    ram_gb = _detect_total_ram_gb()
+
+    # Dynamic RAM safety: 7-8 GB Android phones OOM if extra DMEM/FMEM are pre-allocated
+    if ram_gb >= 11.5:
+        extra_dmem, extra_fmem = 512, 256
+    else:
+        extra_dmem, extra_fmem = 0, 0
 
     with _WRITE_LOCK:
         engine_cfg = _read_json_tolerant(cfg_path)
 
+        audio = engine_cfg.setdefault("Audio", {})
+        audio["audio_backend"] = 0  # SDLAudioOut -> PulseAudio -> nixport AAudio bridge
+
         gpu = engine_cfg.setdefault("GPU", {})
-        gpu["window_width"] = int_w
-        gpu["window_height"] = int_h
+        gpu["window_width"] = win_w
+        gpu["window_height"] = win_h
         gpu["internal_screen_width"] = int_w
         gpu["internal_screen_height"] = int_h
-        gpu["full_screen"] = True
-        gpu["full_screen_mode"] = "Borderless"
+        # On WM-less Xvfb, exact window dimensions fill the screen cleanly without EWMH fullscreen stalls
+        gpu["full_screen"] = False if on_device else True
+        gpu["full_screen_mode"] = "Fullscreen (Borderless)"
         gpu["present_mode"] = normalized["vsync_mode"]
         gpu["vblank_frequency"] = target_vblank
         gpu["async_shader_compilation"] = async_shaders
-        gpu["fast_shader_math"] = True
-        gpu["direct_memory_access_enabled"] = True
+        # Turnip Adreno stability guards (prevent shader/DMA/seccomp black screens)
+        gpu["fast_shader_math"] = False
+        gpu["direct_memory_access_enabled"] = False
+        gpu["copy_gpu_buffers"] = False
+        gpu["readback_linear_images_enabled"] = False
+        gpu["readbacks_mode"] = 0
+        gpu["userfaultfd"] = False
+        gpu["null_gpu"] = False
+        gpu["hdr_allowed"] = False
         gpu["fsr_enabled"] = fsr_enabled
         gpu["rcas_enabled"] = fsr_enabled
         gpu["rcas_attenuation"] = 250
@@ -377,35 +417,45 @@ def sync_android_engine_config(data_dir: Optional[Path], cfg: Dict[str, str]) ->
         gpu["dump_shaders"] = False
 
         vulkan = engine_cfg.setdefault("Vulkan", {})
+        vulkan["gpu_id"] = -1
         vulkan["vkvalidation_core_enabled"] = False
         vulkan["vkvalidation_enabled"] = False
         vulkan["vkvalidation_gpu_enabled"] = False
         vulkan["vkvalidation_sync_enabled"] = False
+        vulkan["vkcrash_diagnostic_enabled"] = False
+        vulkan["renderdoc_enabled"] = False
         vulkan["pipeline_cache_enabled"] = True
         vulkan["pipeline_cache_archived"] = True
 
         gen = engine_cfg.setdefault("General", {})
+        gen["console_language"] = 1  # English slot (target of indo_patcher.py Bakka Sub strings)
         gen["show_fps_counter"] = show_fps
         gen["show_splash"] = False
         gen["dev_kit_mode"] = False
+        gen["discord_rpc_enabled"] = False
         gen["volume_slider"] = volume
-        # Mobile-friendly pool sizes for 8-12 GB Android devices
-        gen["extra_dmem_in_mbytes"] = 1024
-        gen["extra_fmem_in_mbytes"] = 512
+        gen["extra_dmem_in_mbytes"] = extra_dmem
+        gen["extra_fmem_in_mbytes"] = extra_fmem
 
+        # Keep asynchronous shad_log.txt enabled so any crash/black-screen leaves full Vulkan/FEX diagnostics
         log = engine_cfg.setdefault("Log", {})
+        log["enable"] = True
         log["sync"] = False
-        log["enable"] = False
+        log["append"] = False
         log["skip_duplicate"] = True
+
+        net = engine_cfg.setdefault("Network", {})
+        net["connected_to_network"] = False
+        net["shad_net_enabled"] = False
 
         inp = engine_cfg.setdefault("Input", {})
         inp["use_keyboard_as_keyboard"] = False
         inp["use_mice_as_mice"] = False
         inp["use_unified_input_config"] = True
         inp["cursor_hide_timeout"] = 0
+        inp["cursor_state"] = 1
         inp["background_controller_input"] = True
         if on_device:
-            # Never hijack right analog stick with mouse events when virtual touch gamepad is active
             inp["mouse_to_joystick"] = "none"
 
         _atomic_write_text(cfg_path, json.dumps(engine_cfg, indent=2) + "\n")

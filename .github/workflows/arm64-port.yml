@@ -47,6 +47,7 @@ jobs:
             scripts/android_i18n.py \
             scripts/android_updater.py \
             scripts/indo_patcher.py \
+            scripts/nixport_host.py \
             scripts/save_manager.py \
             scripts/session_tracker.py \
             scripts/sfo_parser.py \
@@ -139,10 +140,10 @@ jobs:
           ARM64 Android \`nixport.port.v1\` package by **AO Zero** & **Bakka Sub**.
 
           ### Included in \`${PKG_NAME}\`
-          - Native ARM64 \`shadPS4\` Vulkan 1.3 + \`FEXCore\` guest x86-64 CPU runtime (\`bin/kr_core\`)
-          - Clean UI v1.0.0 Launcher (Dark & Light Mode, English & Bahasa Indonesia)
+          - Native ARM64 \`shadPS4\` Vulkan 1.3 + \`FEXCore\` guest x86-64 CPU runtime (\`bin/kr_core\`) with dynamic \`libSDL3.so.0\` + PulseAudio bridge
+          - Mobile-First Landscape Touch Launcher v1.0.0 (Dark & Light Mode, 5 languages: ID, EN, ES, PT-BR, PT-PT, native Android folder picker)
           - Built-in Indonesian Subtitle Patch (5,993 strings by Bakka Sub) with automatic vanilla backup
-          - Landscape Touch Virtual Gamepad layout (\`virtualkeys.json\`)
+          - Landscape Touch Virtual Gamepad layout (\`virtualkeys.json\`) active only in-game
 
           ### Quick Testing Steps
           1. Install \`nixport\` APK (with Mesa Turnip driver on Snapdragon Adreno 6xx/7xx/8xx, 8+ GB RAM).

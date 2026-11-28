@@ -3,7 +3,7 @@
 """
 ================================================================================
   KAMEN RIDER: MEMORY OF HEROES (CUSA17374) | ANDROID ARM64 LAUNCHER (v1.0.0)
-  Design: Clean Desktop / Mobile-Adaptive UI (Dark & Light Mode, XSEmu-inspired)
+  Design: Mobile-First Landscape Touch UI + Clean Desktop Mode (Dark & Light)
   Port Lead: AO Zero | Community Partner: Bakka Sub (https://www.bakkasub.my.id)
 ================================================================================
 Pure Python stdlib (tkinter) with zero external dependencies. Runs natively inside
@@ -35,6 +35,7 @@ import android_diagnostics as adiag  # noqa: E402
 import android_i18n as ai18n  # noqa: E402
 import android_updater as aupd  # noqa: E402
 import indo_patcher  # noqa: E402
+import nixport_host  # noqa: E402
 import save_manager  # noqa: E402
 import session_tracker  # noqa: E402
 import sfo_parser  # noqa: E402
@@ -47,28 +48,28 @@ THEMES = {
     "dark": {
         "bg_canvas": "#0B0C0E",
         "bg_sidebar": "#0E0F12",
-        "bg_card": "#121418",
-        "bg_hover": "#1A1D23",
-        "bg_nav_active": "#1A1D24",
-        "bg_pill": "#181A20",
-        "bg_input": "#0F1115",
-        "bg_seg_track": "#181B21",
-        "bg_seg_active": "#252933",
-        "border": "#20232A",
-        "border_strong": "#2E323C",
-        "text_primary": "#F3F4F6",
-        "text_secondary": "#8E95A2",
-        "text_muted": "#5F6673",
+        "bg_card": "#13161C",
+        "bg_hover": "#1C2029",
+        "bg_nav_active": "#1E2433",
+        "bg_pill": "#1A1E26",
+        "bg_input": "#0E1015",
+        "bg_seg_track": "#171A21",
+        "bg_seg_active": "#282E3B",
+        "border": "#232833",
+        "border_strong": "#323949",
+        "text_primary": "#F4F6F9",
+        "text_secondary": "#9BA3B2",
+        "text_muted": "#677080",
         "blue": "#3B66F5",
         "blue_hover": "#2E55E0",
-        "blue_soft": "#17203A",
-        "blue_text": "#7AA2FF",
-        "green_bg": "#11261B",
+        "blue_soft": "#172240",
+        "blue_text": "#85AAFF",
+        "green_bg": "#11281D",
         "green_text": "#4ADE80",
         "green_dot": "#22C55E",
-        "red_bg": "#2B1417",
+        "red_bg": "#2D1519",
         "red_text": "#F87171",
-        "amber_bg": "#2B2211",
+        "amber_bg": "#2E2411",
         "amber_text": "#FBBF24",
         "platinum": "#7FB2E5",
         "gold": "#E0B34C",
@@ -76,30 +77,30 @@ THEMES = {
         "bronze": "#C98A4B",
     },
     "light": {
-        "bg_canvas": "#FFFFFF",
-        "bg_sidebar": "#FAFAFB",
+        "bg_canvas": "#F6F7FA",
+        "bg_sidebar": "#FFFFFF",
         "bg_card": "#FFFFFF",
-        "bg_hover": "#F3F4F6",
-        "bg_nav_active": "#EFEFF2",
-        "bg_pill": "#F1F2F5",
-        "bg_input": "#FFFFFF",
-        "bg_seg_track": "#F3F4F6",
+        "bg_hover": "#EFF1F5",
+        "bg_nav_active": "#E8EEFF",
+        "bg_pill": "#EEF0F4",
+        "bg_input": "#F9FAFC",
+        "bg_seg_track": "#ECEDF2",
         "bg_seg_active": "#FFFFFF",
-        "border": "#E8EAEE",
-        "border_strong": "#D5D9E0",
-        "text_primary": "#14161A",
-        "text_secondary": "#68707D",
-        "text_muted": "#8C93A0",
+        "border": "#E2E6EE",
+        "border_strong": "#CBD2DF",
+        "text_primary": "#12151B",
+        "text_secondary": "#5B6472",
+        "text_muted": "#828B99",
         "blue": "#2F5BFF",
         "blue_hover": "#244CE6",
-        "blue_soft": "#EEF2FF",
-        "blue_text": "#2F5BFF",
-        "green_bg": "#EBF9F0",
-        "green_text": "#1B8A4B",
+        "blue_soft": "#EBF0FF",
+        "blue_text": "#2550EB",
+        "green_bg": "#E9F9EF",
+        "green_text": "#178044",
         "green_dot": "#22C55E",
         "red_bg": "#FEF2F2",
         "red_text": "#C93B3B",
-        "amber_bg": "#FFFBEB",
+        "amber_bg": "#FFF8E6",
         "amber_text": "#B45309",
         "platinum": "#3B76B8",
         "gold": "#B88618",
@@ -110,7 +111,7 @@ THEMES = {
 
 
 class KRAndroidLauncher:
-    """Clean UI v1.0.0 (XSEmu-inspired) launcher for Android nixport & desktop testing."""
+    """Mobile-First Landscape Touch UI (nixport) + Clean Desktop Mode launcher."""
 
     def __init__(self, root: tk.Tk, skip_network: bool = False) -> None:
         self.root = root
@@ -124,7 +125,7 @@ class KRAndroidLauncher:
         self._patch_progress_text = ""
 
         self.cfg = acfg.load_android_config(self.data_dir, self.app_dir)
-        acfg.sync_android_engine_config(self.data_dir, self.cfg)
+        acfg.sync_android_engine_config(self.data_dir, self.cfg, window_size=self._target_window_size())
         self.hw_info = adiag.detect_device_hardware(self.data_dir)
 
         self.active_tab = "play"
@@ -137,11 +138,13 @@ class KRAndroidLauncher:
 
         self.log_lines: list[str] = [
             f"[INIT] Kamen Rider: Memory of Heroes Android Port v{VERSION} Ready.",
-            f"[STORAGE] Writable DATA_DIR: {self.data_dir}",
+            f"[STORAGE] DATA_DIR: {self.data_dir}",
             f"[DEVICE] {self.hw_info['device']} | {self.hw_info['soc']} | {self.hw_info['ram_gb']} GB RAM",
+            f"[VULKAN] {self.hw_info.get('vulkan_summary', 'Host Vulkan')}",
         ]
         if self.on_device:
-            self.log_lines.append("[NIXPORT] FEXDROID_PRESENT active: fullscreen touch mode & mouse_to_joystick=none.")
+            sw, sh = self._screen_dims()
+            self.log_lines.append(f"[NIXPORT] Mobile Touch UI active ({sw}x{sh} FIFO, gamepad overlay hidden on launcher).")
 
         self._icon_small: tk.PhotoImage | None = None
         self._icon_poster: tk.PhotoImage | None = None
@@ -154,25 +157,44 @@ class KRAndroidLauncher:
             self._check_updates_async(silent=True)
 
     # ------------------------------------------------------------------ Helpers
+    def _screen_dims(self) -> tuple[int, int]:
+        try:
+            sw = int(os.environ.get("KR_TEST_SCREEN_W") or self.root.winfo_screenwidth())
+            sh = int(os.environ.get("KR_TEST_SCREEN_H") or self.root.winfo_screenheight())
+            return max(640, sw), max(360, sh)
+        except Exception:
+            return (1760, 720) if self.on_device else (1280, 720)
+
+    def _target_window_size(self) -> tuple[int, int] | None:
+        if self.on_device:
+            return self._screen_dims()
+        return None
+
     def _compute_scale(self) -> float:
         if not self.on_device:
             return 1.0
-        sh = max(480, self.root.winfo_screenheight())
-        if sh <= 600:
-            return 0.78
-        if sh <= 800:
+        _sw, sh = self._screen_dims()
+        if sh <= 580:
+            return 0.74
+        if sh <= 660:
+            return 0.88
+        if sh <= 820:
             return 1.0
         if sh <= 1150:
-            return 1.12
-        return 1.22
+            return 1.18
+        return 1.32
 
     def _s(self, px: int) -> int:
         return max(1, int(round(px * self.scale)))
 
+    def _m(self, mobile_val: int, desktop_val: int) -> int:
+        return mobile_val if self.on_device else desktop_val
+
     def _make_scroll_area(self, parent: tk.Frame, bg: str) -> tuple[tk.Canvas, tk.Frame]:
-        """Reusable full-width scrollable container with global mousewheel support."""
+        """Reusable full-width scrollable container with touch-wide scrollbar & wheel support."""
         canvas = tk.Canvas(parent, bg=bg, highlightthickness=0, bd=0, width=1, height=1)
-        sb = tk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        sb_width = self._s(16) if self.on_device else 12
+        sb = tk.Scrollbar(parent, orient="vertical", command=canvas.yview, width=sb_width)
         inner = tk.Frame(canvas, bg=bg)
         win_id = canvas.create_window((0, 0), window=inner, anchor="nw")
         inner.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
@@ -223,8 +245,10 @@ class KRAndroidLauncher:
         try:
             raw = tk.PhotoImage(file=str(icon_path))
             w = max(1, raw.width())
-            sub_small = max(1, round(w / self._s(28)))
-            sub_poster = max(1, round(w / self._s(52)))
+            target_small = self._s(34 if self.on_device else 28)
+            target_poster = self._s(58 if self.on_device else 52)
+            sub_small = max(1, round(w / target_small))
+            sub_poster = max(1, round(w / target_poster))
             self._icon_small = raw.subsample(sub_small, sub_small)
             self._icon_poster = raw.subsample(sub_poster, sub_poster)
         except Exception:
@@ -234,13 +258,13 @@ class KRAndroidLauncher:
     def _configure_window(self) -> None:
         self.root.title(f"Kamen Rider: Memory of Heroes (Android Port v{VERSION})")
         if self.on_device:
-            sw = self.root.winfo_screenwidth()
-            sh = self.root.winfo_screenheight()
+            sw, sh = self._screen_dims()
             self.root.geometry(f"{sw}x{sh}+0+0")
-            try:
-                self.root.attributes("-fullscreen", True)
-            except Exception:
-                pass
+            if not os.environ.get("KR_TEST_SCREEN_W"):
+                try:
+                    self.root.attributes("-fullscreen", True)
+                except Exception:
+                    pass
         else:
             self.root.geometry("1060x660")
             self.root.minsize(920, 560)
@@ -265,8 +289,8 @@ class KRAndroidLauncher:
         stamp = datetime.now().strftime("%H:%M:%S")
         line = f"[{stamp}] {message}"
         self.log_lines.append(line)
-        if len(self.log_lines) > 200:
-            self.log_lines = self.log_lines[-200:]
+        if len(self.log_lines) > 250:
+            self.log_lines = self.log_lines[-250:]
         if hasattr(self, "log_widget") and self.log_widget.winfo_exists():
             self.log_widget.configure(state="normal")
             self.log_widget.insert("end", line + "\n")
@@ -276,7 +300,7 @@ class KRAndroidLauncher:
     def _save_and_sync(self, **updates) -> None:
         self.cfg.update({k: str(v) for k, v in updates.items()})
         self.cfg = acfg.save_android_config(self.data_dir, self.cfg)
-        acfg.sync_android_engine_config(self.data_dir, self.cfg)
+        acfg.sync_android_engine_config(self.data_dir, self.cfg, window_size=self._target_window_size())
 
     # ------------------------------------------------------------------ UI Build
     def _build_ui(self) -> None:
@@ -290,13 +314,108 @@ class KRAndroidLauncher:
         shell = tk.Frame(self.root, bg=t["bg_canvas"])
         shell.pack(fill="both", expand=True)
 
-        self._build_sidebar(shell)
-        tk.Frame(shell, bg=t["border"], width=1).pack(side="left", fill="y")
-
-        self.viewport = tk.Frame(shell, bg=t["bg_canvas"])
-        self.viewport.pack(side="left", fill="both", expand=True)
+        if self.on_device:
+            self._build_mobile_topbar(shell)
+            tk.Frame(shell, bg=t["border"], height=1).pack(side="top", fill="x")
+            self.viewport = tk.Frame(shell, bg=t["bg_canvas"])
+            self.viewport.pack(side="top", fill="both", expand=True)
+        else:
+            self._build_sidebar(shell)
+            tk.Frame(shell, bg=t["border"], width=1).pack(side="left", fill="y")
+            self.viewport = tk.Frame(shell, bg=t["bg_canvas"])
+            self.viewport.pack(side="left", fill="both", expand=True)
 
         self._render_active_tab()
+
+    def _build_mobile_topbar(self, parent: tk.Frame) -> None:
+        """Full-width thumb-friendly top navigation bar for landscape smartphones."""
+        t = self._t()
+        sw, _sh = self._screen_dims()
+        compact_w = sw < 1380
+
+        bar = tk.Frame(parent, bg=t["bg_sidebar"], height=self._s(58))
+        bar.pack(side="top", fill="x")
+        bar.pack_propagate(False)
+
+        # Left: App icon + concise brand title
+        brand = tk.Frame(bar, bg=t["bg_sidebar"])
+        brand.pack(side="left", padx=(self._s(14), self._s(10)), fill="y")
+        if self._icon_small is not None:
+            tk.Label(brand, image=self._icon_small, bg=t["bg_sidebar"], bd=0).pack(
+                side="left", padx=(0, self._s(8)), pady=self._s(8)
+            )
+        brand_txt = "KR: MoH" if compact_w else "Memory of Heroes"
+        tk.Label(
+            brand,
+            text=brand_txt,
+            bg=t["bg_sidebar"],
+            fg=t["text_primary"],
+            font=self._font(12 if compact_w else 13, bold=True),
+            anchor="w",
+        ).pack(side="left")
+
+        # Right: Theme + Language touch pills
+        right = tk.Frame(bar, bg=t["bg_sidebar"])
+        right.pack(side="right", padx=(self._s(8), self._s(14)), fill="y")
+
+        lang_code = ai18n.normalize_lang(self.cfg.get("language", "id"))
+        self._make_pill(
+            right,
+            ai18n.LANG_SHORT[lang_code],
+            fg=t["blue_text"],
+            bg=t["blue_soft"],
+            cmd=self._cycle_language,
+            font_pt=11,
+            padx=12,
+            pady=7,
+        ).pack(side="right", pady=self._s(10))
+
+        theme_txt = self._tr("theme_dark") if self.cfg["theme"] == "dark" else self._tr("theme_light")
+        self._make_pill(
+            right,
+            theme_txt,
+            cmd=self._toggle_theme,
+            font_pt=11,
+            padx=12,
+            pady=7,
+        ).pack(side="right", padx=(0, self._s(8)), pady=self._s(10))
+
+        # Center: Large horizontal navigation tabs
+        patch_st = self._patch_status()
+        patch_lbl = f"{self._tr('nav_patch')} ({'ID' if patch_st['applied'] else 'EN'})"
+        nav_items = [
+            ("play", self._tr("nav_play")),
+            ("patch", patch_lbl),
+            ("saves", self._tr("nav_saves")),
+            ("trophies", self._tr("nav_trophies")),
+            ("settings", self._tr("nav_settings")),
+        ]
+
+        nav_wrap = tk.Frame(bar, bg=t["bg_sidebar"])
+        nav_wrap.pack(side="left", fill="y", padx=self._s(4))
+
+        tab_pad_x = 11 if compact_w else 16
+        tab_font = 11 if compact_w else 12
+        for tab_id, label in nav_items:
+            is_active = self.active_tab == tab_id
+            btn_bg = t["blue"] if is_active else t["bg_pill"]
+            btn_fg = "#FFFFFF" if is_active else t["text_secondary"]
+            bd_col = t["blue"] if is_active else t["border"]
+
+            tab_lbl = tk.Label(
+                nav_wrap,
+                text=label,
+                bg=btn_bg,
+                fg=btn_fg,
+                font=self._font(tab_font, bold=True),
+                padx=self._s(tab_pad_x),
+                pady=self._s(8),
+                cursor="hand2",
+                highlightthickness=1,
+                highlightbackground=bd_col,
+            )
+            tab_lbl.pack(side="left", padx=self._s(4), pady=self._s(9))
+            tab_lbl.bind("<Button-1>", lambda _e, tid=tab_id: self._switch_tab(tid))
 
     def _build_sidebar(self, parent: tk.Frame) -> None:
         t = self._t()
@@ -386,16 +505,29 @@ class KRAndroidLauncher:
         lang_code = ai18n.normalize_lang(self.cfg.get("language", "id"))
         self._make_pill(foot, ai18n.LANG_SHORT[lang_code], cmd=self._cycle_language).pack(side="left")
 
-    def _make_pill(self, parent, text: str, fg=None, bg=None, cmd=None) -> tk.Label:
+    def _make_pill(
+        self,
+        parent,
+        text: str,
+        fg=None,
+        bg=None,
+        cmd=None,
+        font_pt: int | None = None,
+        padx: int | None = None,
+        pady: int | None = None,
+    ) -> tk.Label:
         t = self._t()
+        fpt = font_pt if font_pt is not None else self._m(10, 8)
+        px = padx if padx is not None else self._m(10, 8)
+        py = pady if pady is not None else self._m(5, 4)
         lbl = tk.Label(
             parent,
             text=text,
             bg=bg or t["bg_pill"],
             fg=fg or t["text_secondary"],
-            font=self._font(8, bold=True),
-            padx=self._s(8),
-            pady=self._s(4),
+            font=self._font(fpt, bold=True),
+            padx=self._s(px),
+            pady=self._s(py),
             cursor="hand2" if cmd else "",
             highlightthickness=1,
             highlightbackground=t["border"],
@@ -404,7 +536,16 @@ class KRAndroidLauncher:
             lbl.bind("<Button-1>", lambda _e: cmd())
         return lbl
 
-    def _make_button(self, parent, text: str, cmd, kind: str = "secondary", padx: int = 12, pady: int = 6) -> tk.Button:
+    def _make_button(
+        self,
+        parent,
+        text: str,
+        cmd,
+        kind: str = "secondary",
+        padx: int | None = None,
+        pady: int | None = None,
+        font_pt: int | None = None,
+    ) -> tk.Button:
         t = self._t()
         if kind == "primary":
             bg, fg, abg = t["blue"], "#FFFFFF", t["blue_hover"]
@@ -419,6 +560,10 @@ class KRAndroidLauncher:
             bg, fg, abg = t["bg_pill"], t["text_primary"], t["bg_hover"]
             bd_col = t["border_strong"]
 
+        px = padx if padx is not None else self._m(16, 12)
+        py = pady if pady is not None else self._m(9, 6)
+        fpt = font_pt if font_pt is not None else self._m(11, 9)
+
         return tk.Button(
             parent,
             text=text,
@@ -431,14 +576,32 @@ class KRAndroidLauncher:
             bd=0,
             highlightthickness=1,
             highlightbackground=bd_col,
-            font=self._font(9, bold=(kind == "primary")),
-            padx=self._s(padx),
-            pady=self._s(pady),
+            font=self._font(fpt, bold=(kind in ("primary", "success") or self.on_device)),
+            padx=self._s(px),
+            pady=self._s(py),
             cursor="hand2",
         )
 
     def _make_link_action(self, parent, text: str, cmd, danger: bool = False) -> tk.Label:
         t = self._t()
+        if self.on_device:
+            bg_col = t["red_bg"] if danger else t["blue_soft"]
+            fg_col = t["red_text"] if danger else t["blue_text"]
+            lbl = tk.Label(
+                parent,
+                text=text,
+                bg=bg_col,
+                fg=fg_col,
+                font=self._font(10, bold=True),
+                padx=self._s(12),
+                pady=self._s(5),
+                cursor="hand2",
+                highlightthickness=1,
+                highlightbackground=t["border_strong"],
+            )
+            lbl.bind("<Button-1>", lambda _e: cmd())
+            return lbl
+
         lbl = tk.Label(
             parent,
             text=text,
@@ -450,15 +613,17 @@ class KRAndroidLauncher:
         lbl.bind("<Button-1>", lambda _e: cmd())
         return lbl
 
-    def _make_card(self, parent) -> tk.Frame:
+    def _make_card(self, parent, padx: int | None = None, pady: int | None = None) -> tk.Frame:
         t = self._t()
+        px = padx if padx is not None else self._m(16, 14)
+        py = pady if pady is not None else self._m(12, 12)
         return tk.Frame(
             parent,
             bg=t["bg_card"],
             highlightthickness=1,
             highlightbackground=t["border"],
-            padx=self._s(14),
-            pady=self._s(12),
+            padx=self._s(px),
+            pady=self._s(py),
         )
 
     def _make_segmented(self, parent, options: list[tuple[str, str]], current: str, on_select) -> tk.Frame:
@@ -471,16 +636,24 @@ class KRAndroidLauncher:
             padx=2,
             pady=2,
         )
+        seg_px = self._m(13, 9)
+        seg_py = self._m(7, 4)
+        seg_pt = self._m(11, 8)
         for val, label in options:
             active = val == current
+            if self.on_device and active:
+                bg_col, fg_col = t["blue"], "#FFFFFF"
+            else:
+                bg_col = t["bg_seg_active"] if active else t["bg_seg_track"]
+                fg_col = t["text_primary"] if active else t["text_secondary"]
             btn = tk.Label(
                 track,
                 text=label,
-                bg=t["bg_seg_active"] if active else t["bg_seg_track"],
-                fg=t["text_primary"] if active else t["text_secondary"],
-                font=self._font(8, bold=active),
-                padx=self._s(9),
-                pady=self._s(4),
+                bg=bg_col,
+                fg=fg_col,
+                font=self._font(seg_pt, bold=active or self.on_device),
+                padx=self._s(seg_px),
+                pady=self._s(seg_py),
                 cursor="hand2",
             )
             btn.pack(side="left", padx=1)
@@ -497,7 +670,10 @@ class KRAndroidLauncher:
             child.destroy()
 
         if self.active_tab == "play":
-            self._build_tab_overview()
+            if self.on_device:
+                self._build_tab_overview_mobile()
+            else:
+                self._build_tab_overview()
         elif self.active_tab == "patch":
             self._build_tab_patch()
         elif self.active_tab == "saves":
@@ -507,7 +683,309 @@ class KRAndroidLauncher:
         elif self.active_tab == "settings":
             self._build_tab_settings()
 
-    # ------------------------------------------------------------------ TAB 1: OVERVIEW
+    # ------------------------------------------------------------------ TAB 1A: MOBILE TOUCH PLAY
+    def _build_tab_overview_mobile(self) -> None:
+        """Thumb-friendly 2-column landscape home screen designed for 1760x720 / 1280x720 phones."""
+        t = self._t()
+        sw, _sh = self._screen_dims()
+        compact_w = sw < 1380
+        title_id, app_ver = self._game_meta()
+        gd = self._game_dir()
+        patch_st = self._patch_status()
+        stats = session_tracker.get_formatted_stats(self.data_dir)
+        cache_st = adiag.get_shader_cache_stats(self.data_dir)
+
+        wrap = tk.Frame(self.viewport, bg=t["bg_canvas"])
+        wrap.pack(fill="both", expand=True, padx=self._s(16), pady=self._s(12))
+        wrap.columnconfigure(0, weight=1, uniform="mcol")
+        wrap.columnconfigure(1, weight=1, uniform="mcol")
+        wrap.rowconfigure(0, weight=1)
+
+        left_col = tk.Frame(wrap, bg=t["bg_canvas"])
+        left_col.grid(row=0, column=0, sticky="nsew", padx=(0, self._s(8)))
+
+        right_col = tk.Frame(wrap, bg=t["bg_canvas"])
+        right_col.grid(row=0, column=1, sticky="nsew", padx=(self._s(8), 0))
+
+        # --- LEFT 1: Optional Vulkan 1.3 Turnip warning banner ---
+        if not self.hw_info.get("vulkan_13_ok", True):
+            warn = tk.Frame(
+                left_col,
+                bg=t["amber_bg"],
+                highlightthickness=1,
+                highlightbackground=t["amber_text"],
+                padx=self._s(12),
+                pady=self._s(8),
+            )
+            warn.pack(fill="x", pady=(0, self._s(8)))
+            tk.Label(
+                warn,
+                text=self._tr("warn_vulkan13", drv=self.hw_info.get("vulkan_summary", "System Vulkan")),
+                bg=t["amber_bg"],
+                fg=t["amber_text"],
+                font=self._font(10, bold=True),
+                justify="left",
+                anchor="w",
+                wraplength=self._s(540 if compact_w else 760),
+            ).pack(fill="x")
+
+        # --- LEFT 2: Hero Game Card ---
+        hero = self._make_card(left_col, padx=16, pady=12)
+        hero.pack(fill="x", pady=(0, self._s(10)))
+
+        top_meta = tk.Frame(hero, bg=t["bg_card"])
+        top_meta.pack(fill="x", pady=(0, self._s(6)))
+        if gd is not None:
+            self._make_pill(top_meta, self._tr("badge_ready"), fg=t["green_text"], bg=t["green_bg"], font_pt=10).pack(
+                side="left"
+            )
+        else:
+            self._make_pill(top_meta, self._tr("badge_missing"), fg=t["amber_text"], bg=t["amber_bg"], font_pt=10).pack(
+                side="left"
+            )
+
+        if self.update_info and not self.update_info.get("up_to_date", True):
+            upd_tag = self.update_info.get("latest", "")
+            self._make_pill(
+                top_meta,
+                f"Update {upd_tag}",
+                fg=t["blue_text"],
+                bg=t["blue_soft"],
+                cmd=lambda: self._switch_tab("settings"),
+                font_pt=10,
+            ).pack(side="left", padx=(self._s(6), 0))
+
+        tk.Label(
+            top_meta,
+            text=f"{stats['playtime_text']} · {stats['last_played_text']}",
+            bg=t["bg_card"],
+            fg=t["text_secondary"],
+            font=self._font(10, mono=True),
+            anchor="e",
+        ).pack(side="right")
+
+        hbody = tk.Frame(hero, bg=t["bg_card"])
+        hbody.pack(fill="x")
+        if self._icon_poster is not None:
+            tk.Label(hbody, image=self._icon_poster, bg=t["bg_card"], bd=0).pack(
+                side="left", padx=(0, self._s(12))
+            )
+        htxt = tk.Frame(hbody, bg=t["bg_card"])
+        htxt.pack(side="left", fill="x", expand=True)
+        tk.Label(
+            htxt,
+            text="Kamen Rider: Memory of Heroes",
+            bg=t["bg_card"],
+            fg=t["text_primary"],
+            font=self._font(15 if compact_w else 18, bold=True),
+            anchor="w",
+        ).pack(fill="x")
+        tk.Label(
+            htxt,
+            text=f"{title_id} · v{app_ver} · AO Zero & Bakka Sub",
+            bg=t["bg_card"],
+            fg=t["text_secondary"],
+            font=self._font(11),
+            anchor="w",
+        ).pack(fill="x", pady=(self._s(3), 0))
+
+        # --- LEFT 3: Game Folder Card (Native Android Folder Picker) ---
+        c_folder = self._make_card(left_col, padx=16, pady=12)
+        c_folder.pack(fill="x", pady=(0, self._s(10)))
+        f_head = tk.Frame(c_folder, bg=t["bg_card"])
+        f_head.pack(fill="x", pady=(0, self._s(8)))
+        tk.Label(
+            f_head,
+            text=self._tr("card_folder"),
+            bg=t["bg_card"],
+            fg=t["text_muted"],
+            font=self._font(10, bold=True),
+        ).pack(side="left")
+        if gd is not None:
+            self._make_link_action(f_head, self._tr("btn_verify"), self._on_verify_game).pack(side="right")
+
+        f_row = tk.Frame(c_folder, bg=t["bg_card"])
+        f_row.pack(fill="x")
+        max_chars = 30 if compact_w else 44
+        gd_str = str(gd) if gd else self._tr("not_set")
+        if len(gd_str) > max_chars:
+            gd_str = "..." + gd_str[-(max_chars - 3):]
+        tk.Label(
+            f_row,
+            text=gd_str,
+            bg=t["bg_input"],
+            fg=t["text_primary"] if gd else t["amber_text"],
+            font=self._font(11, mono=bool(gd)),
+            anchor="w",
+            padx=self._s(12),
+            pady=self._s(10),
+            highlightthickness=1,
+            highlightbackground=t["border"],
+        ).pack(side="left", fill="x", expand=True, padx=(0, self._s(10)))
+
+        self._make_button(
+            f_row,
+            self._tr("btn_change"),
+            self._on_browse_game_dir,
+            kind="secondary" if gd else "primary",
+            padx=16,
+            pady=9,
+            font_pt=11,
+        ).pack(side="right")
+
+        # --- LEFT 4: Giant Thumb-Friendly Primary & Patch CTA Buttons ---
+        play_lbl = self._tr("btn_running") if self.game_running else f"▶  {self._tr('btn_play_hero')}"
+        self._make_button(
+            left_col,
+            play_lbl,
+            self._on_play,
+            kind="primary",
+            padx=20,
+            pady=14,
+            font_pt=15,
+        ).pack(fill="x", pady=(0, self._s(10)))
+
+        if self.patch_busy:
+            p_lbl = self._tr("patch_busy")
+            p_kind = "secondary"
+        else:
+            p_lbl = self._tr("patch_on") if patch_st["applied"] else self._tr("patch_off")
+            p_kind = "success" if patch_st["applied"] else "secondary"
+        self._make_button(
+            left_col,
+            p_lbl,
+            lambda: self._trigger_indo_patch(not patch_st["applied"]),
+            kind=p_kind,
+            padx=18,
+            pady=11,
+            font_pt=12,
+        ).pack(fill="x", pady=(0, self._s(8)))
+
+        tk.Label(
+            left_col,
+            text=self._tr("tip_overlay"),
+            bg=t["bg_canvas"],
+            fg=t["text_muted"],
+            font=self._font(10),
+            justify="left",
+            anchor="w",
+            wraplength=self._s(540 if compact_w else 760),
+        ).pack(fill="x", pady=(self._s(2), 0))
+
+        # --- RIGHT 1: Quick Performance Card ---
+        c_perf = self._make_card(right_col, padx=16, pady=12)
+        c_perf.pack(fill="x", pady=(0, self._s(10)))
+        p_head = tk.Frame(c_perf, bg=t["bg_card"])
+        p_head.pack(fill="x", pady=(0, self._s(8)))
+        tk.Label(
+            p_head,
+            text=self._tr("card_overrides"),
+            bg=t["bg_card"],
+            fg=t["text_muted"],
+            font=self._font(10, bold=True),
+        ).pack(side="left")
+        tk.Label(
+            p_head,
+            text=self._tr("autosaved"),
+            bg=t["bg_card"],
+            fg=t["text_secondary"],
+            font=self._font(10),
+        ).pack(side="right")
+
+        self._override_row(
+            c_perf,
+            self._tr("lbl_resolution"),
+            [
+                ("540p (960x540)", "540p"),
+                ("720p (1280x720)", "720p"),
+                ("1080p (1920x1080)", "1080p"),
+            ],
+            self.cfg["resolution"],
+            lambda v: self._set_quick_setting("resolution", v),
+        )
+        self._override_row(
+            c_perf,
+            self._tr("lbl_fps"),
+            [
+                ("30 FPS (Locked)", "30 FPS"),
+                ("60 FPS (Native Unlock)", "60 FPS"),
+            ],
+            self.cfg["fps"],
+            lambda v: self._set_quick_setting("fps", v),
+        )
+        self._override_row(
+            c_perf,
+            self._tr("lbl_fsr"),
+            [("true", "On"), ("false", "Off")],
+            self.cfg["fsr_enabled"],
+            lambda v: self._set_quick_setting("fsr_enabled", v),
+        )
+        self._override_row(
+            c_perf,
+            self._tr("lbl_fps_hud"),
+            [("true", "On"), ("false", "Off")],
+            self.cfg["show_fps"],
+            lambda v: self._set_quick_setting("show_fps", v),
+        )
+
+        # --- RIGHT 2: Status, Log Viewer & Diagnostic Export Card ---
+        c_diag = self._make_card(right_col, padx=16, pady=12)
+        c_diag.pack(fill="both", expand=True)
+        self._card_header(
+            c_diag,
+            self._tr("card_status_diag"),
+            self._tr("btn_clear_cache"),
+            self._on_clear_cache,
+            danger=True,
+        )
+        self._spec_row(c_diag, self._tr("lbl_shaders"), cache_st["summary"], value_fg=t["green_text"], mono=True)
+
+        btn_strip = tk.Frame(c_diag, bg=t["bg_card"])
+        btn_strip.pack(fill="x", pady=(self._s(6), self._s(8)))
+        btn_strip.columnconfigure(0, weight=1, uniform="dcol")
+        btn_strip.columnconfigure(1, weight=1, uniform="dcol")
+
+        self._make_button(
+            btn_strip,
+            self._tr("btn_view_log"),
+            self._on_view_last_log,
+            kind="secondary",
+            padx=12,
+            pady=9,
+            font_pt=11,
+        ).grid(row=0, column=0, sticky="ew", padx=(0, self._s(5)))
+
+        self._make_button(
+            btn_strip,
+            self._tr("btn_export_diag"),
+            self._on_export_diagnostic,
+            kind="secondary",
+            padx=12,
+            pady=9,
+            font_pt=11,
+        ).grid(row=0, column=1, sticky="ew", padx=(self._s(5), 0))
+
+        self.log_widget = tk.Text(
+            c_diag,
+            bg=t["bg_input"],
+            fg=t["text_secondary"],
+            font=self._font(10, mono=True),
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=t["border"],
+            wrap="word",
+            width=1,
+            height=3,
+            padx=self._s(10),
+            pady=self._s(6),
+        )
+        self.log_widget.pack(fill="both", expand=True)
+        self.log_widget.insert("1.0", "\n".join(self.log_lines) + "\n")
+        self.log_widget.see("end")
+        self.log_widget.configure(state="disabled")
+
+    # ------------------------------------------------------------------ TAB 1B: DESKTOP OVERVIEW
     def _build_tab_overview(self) -> None:
         t = self._t()
         title_id, app_ver = self._game_meta()
@@ -592,6 +1070,10 @@ class KRAndroidLauncher:
             padx=12,
             pady=7,
         ).pack(side="left", padx=(0, self._s(8)))
+
+        self._make_button(bar, self._tr("btn_view_log"), self._on_view_last_log, kind="secondary", padx=10, pady=7).pack(
+            side="left", padx=(0, self._s(8))
+        )
 
         if gd is not None:
             self._make_pill(bar, self._tr("badge_ready"), fg=t["green_text"], bg=t["green_bg"]).pack(side="left")
@@ -746,7 +1228,13 @@ class KRAndroidLauncher:
         t = self._t()
         head = tk.Frame(card, bg=t["bg_card"])
         head.pack(fill="x", pady=(0, self._s(8)))
-        tk.Label(head, text=title, bg=t["bg_card"], fg=t["text_muted"], font=self._font(8, bold=True)).pack(side="left")
+        tk.Label(
+            head,
+            text=title,
+            bg=t["bg_card"],
+            fg=t["text_muted"],
+            font=self._font(self._m(10, 8), bold=True),
+        ).pack(side="left")
         if action_text and action_cmd:
             self._make_link_action(head, action_text, action_cmd, danger=danger).pack(side="right")
 
@@ -762,14 +1250,14 @@ class KRAndroidLauncher:
     ) -> None:
         t = self._t()
         row = tk.Frame(card, bg=t["bg_card"])
-        row.pack(fill="x", pady=self._s(3))
+        row.pack(fill="x", pady=self._s(self._m(4, 3)))
         tk.Label(
             row,
             text=label,
             bg=t["bg_card"],
             fg=t["text_secondary"],
-            font=self._font(9),
-            width=self._s(11),
+            font=self._font(self._m(11, 9)),
+            width=self._s(12 if self.on_device else 11),
             anchor="w",
         ).pack(side="left")
         tk.Label(
@@ -777,7 +1265,7 @@ class KRAndroidLauncher:
             text=value,
             bg=t["bg_card"],
             fg=value_fg or t["text_primary"],
-            font=self._font(9, mono=mono),
+            font=self._font(self._m(11, 9), mono=mono),
             anchor="w",
         ).pack(side="left", fill="x", expand=True)
         if action_text and action_cmd:
@@ -786,53 +1274,65 @@ class KRAndroidLauncher:
     def _override_row(self, card: tk.Frame, label: str, options, current: str, on_select) -> None:
         t = self._t()
         row = tk.Frame(card, bg=t["bg_card"])
-        row.pack(fill="x", pady=self._s(4))
+        row.pack(fill="x", pady=self._s(self._m(5, 4)))
         tk.Label(
             row,
             text=label,
             bg=t["bg_card"],
             fg=t["text_secondary"],
-            font=self._font(9),
-            width=self._s(13),
+            font=self._font(self._m(11, 9)),
             anchor="w",
-        ).pack(side="left")
+        ).pack(side="left", fill="x", expand=True)
         self._make_segmented(row, options, current, on_select).pack(side="right")
 
     # ------------------------------------------------------------------ TAB 2: PATCH INDO
     def _build_tab_patch(self) -> None:
         t = self._t()
         st = self._patch_status()
+        wrap_w = 1100 if self.on_device else 600
 
         wrap = tk.Frame(self.viewport, bg=t["bg_canvas"])
         wrap.pack(fill="both", expand=True, padx=self._s(18), pady=self._s(16))
 
         tk.Label(
-            wrap, text=self._tr("patch_title"), bg=t["bg_canvas"], fg=t["text_primary"], font=self._font(14, bold=True), anchor="w"
+            wrap,
+            text=self._tr("patch_title"),
+            bg=t["bg_canvas"],
+            fg=t["text_primary"],
+            font=self._font(self._m(17, 14), bold=True),
+            anchor="w",
         ).pack(fill="x")
         tk.Label(
-            wrap, text=self._tr("patch_sub"), bg=t["bg_canvas"], fg=t["text_secondary"], font=self._font(9), anchor="w"
-        ).pack(fill="x", pady=(self._s(2), self._s(14)))
+            wrap,
+            text=self._tr("patch_sub"),
+            bg=t["bg_canvas"],
+            fg=t["text_secondary"],
+            font=self._font(self._m(11, 9)),
+            anchor="w",
+        ).pack(fill="x", pady=(self._s(3), self._s(14)))
 
-        card = self._make_card(wrap)
+        card = self._make_card(wrap, padx=18, pady=16)
         card.pack(fill="x")
 
         top = tk.Frame(card, bg=t["bg_card"])
-        top.pack(fill="x", pady=(0, self._s(10)))
-        self._make_pill(top, "ID", fg=t["blue_text"], bg=t["blue_soft"]).pack(side="left", padx=(0, self._s(8)))
+        top.pack(fill="x", pady=(0, self._s(12)))
+        self._make_pill(top, "ID", fg=t["blue_text"], bg=t["blue_soft"], font_pt=self._m(11, 8)).pack(
+            side="left", padx=(0, self._s(10))
+        )
         tk.Label(
             top,
             text=f"Bakka Sub x AO Zero · v{st['version']} · {st['translated_count']:,} strings",
             bg=t["bg_card"],
             fg=t["text_primary"],
-            font=self._font(10, bold=True),
+            font=self._font(self._m(13, 10), bold=True),
         ).pack(side="left")
 
         pill_txt = self._tr("sub_indo") if st["applied"] else self._tr("sub_orig")
         pill_fg = t["green_text"] if st["applied"] else t["text_secondary"]
         pill_bg = t["green_bg"] if st["applied"] else t["bg_pill"]
-        self._make_pill(top, pill_txt, fg=pill_fg, bg=pill_bg).pack(side="right")
+        self._make_pill(top, pill_txt, fg=pill_fg, bg=pill_bg, font_pt=self._m(11, 8)).pack(side="right")
 
-        def _short_path(p: Path, maxlen: int = 44) -> str:
+        def _short_path(p: Path, maxlen: int = 58 if self.on_device else 44) -> str:
             s = str(p)
             return ("..." + s[-(maxlen - 3):]) if len(s) > maxlen else s
 
@@ -846,26 +1346,26 @@ class KRAndroidLauncher:
             text="\n".join(meta_lines),
             bg=t["bg_input"],
             fg=t["text_secondary"],
-            font=self._font(8, mono=True),
+            font=self._font(self._m(10, 8), mono=True),
             justify="left",
             anchor="w",
-            wraplength=self._s(600),
-            padx=self._s(10),
-            pady=self._s(8),
+            wraplength=self._s(wrap_w),
+            padx=self._s(12),
+            pady=self._s(10),
             highlightthickness=1,
             highlightbackground=t["border"],
-        ).pack(fill="x", pady=(0, self._s(10)))
+        ).pack(fill="x", pady=(0, self._s(12)))
 
         tk.Label(
             card,
             text=self._tr("patch_note"),
             bg=t["bg_card"],
             fg=t["text_muted"],
-            font=self._font(8),
-            wraplength=self._s(600),
+            font=self._font(self._m(11, 8)),
+            wraplength=self._s(wrap_w),
             justify="left",
             anchor="w",
-        ).pack(fill="x", pady=(0, self._s(12)))
+        ).pack(fill="x", pady=(0, self._s(14)))
 
         if self._patch_progress_text:
             self.patch_progress_lbl = tk.Label(
@@ -873,23 +1373,37 @@ class KRAndroidLauncher:
                 text=self._patch_progress_text,
                 bg=t["bg_card"],
                 fg=t["amber_text"] if self.patch_busy else t["green_text"],
-                font=self._font(8, mono=True),
-                wraplength=self._s(600),
+                font=self._font(self._m(11, 8), mono=True),
+                wraplength=self._s(wrap_w),
                 justify="left",
                 anchor="w",
             )
-            self.patch_progress_lbl.pack(fill="x", pady=(0, self._s(10)))
+            self.patch_progress_lbl.pack(fill="x", pady=(0, self._s(12)))
 
         btns = tk.Frame(card, bg=t["bg_card"])
         btns.pack(fill="x")
         if self.patch_busy:
-            self._make_pill(btns, self._tr("patch_busy"), fg=t["amber_text"], bg=t["amber_bg"]).pack(side="left")
+            self._make_pill(btns, self._tr("patch_busy"), fg=t["amber_text"], bg=t["amber_bg"], font_pt=self._m(11, 8)).pack(
+                side="left"
+            )
         else:
             self._make_button(
-                btns, self._tr("btn_apply_indo"), lambda: self._trigger_indo_patch(True), kind="primary", padx=16, pady=8
-            ).pack(side="left", padx=(0, self._s(8)))
+                btns,
+                self._tr("btn_apply_indo"),
+                lambda: self._trigger_indo_patch(True),
+                kind="primary",
+                padx=self._m(22, 16),
+                pady=self._m(12, 8),
+                font_pt=self._m(12, 9),
+            ).pack(side="left", padx=(0, self._s(10)))
             self._make_button(
-                btns, self._tr("btn_restore_orig"), lambda: self._trigger_indo_patch(False), kind="secondary", padx=14, pady=8
+                btns,
+                self._tr("btn_restore_orig"),
+                lambda: self._trigger_indo_patch(False),
+                kind="secondary",
+                padx=self._m(20, 14),
+                pady=self._m(12, 8),
+                font_pt=self._m(12, 9),
             ).pack(side="left")
 
     # ------------------------------------------------------------------ TAB 3: SAVES
@@ -902,17 +1416,41 @@ class KRAndroidLauncher:
         head.pack(fill="x", pady=(0, self._s(10)))
         left = tk.Frame(head, bg=t["bg_canvas"])
         left.pack(side="left", fill="x", expand=True)
-        tk.Label(left, text=self._tr("saves_title"), bg=t["bg_canvas"], fg=t["text_primary"], font=self._font(14, bold=True), anchor="w").pack(fill="x")
-        tk.Label(left, text=self._tr("saves_sub"), bg=t["bg_canvas"], fg=t["text_secondary"], font=self._font(9), anchor="w").pack(fill="x")
+        tk.Label(
+            left,
+            text=self._tr("saves_title"),
+            bg=t["bg_canvas"],
+            fg=t["text_primary"],
+            font=self._font(self._m(16, 14), bold=True),
+            anchor="w",
+        ).pack(fill="x")
+        tk.Label(
+            left,
+            text=self._tr("saves_sub"),
+            bg=t["bg_canvas"],
+            fg=t["text_secondary"],
+            font=self._font(self._m(11, 9)),
+            anchor="w",
+        ).pack(fill="x")
 
         actions = tk.Frame(head, bg=t["bg_canvas"])
         actions.pack(side="right")
-        self._make_button(actions, self._tr("btn_import_save"), self._on_import_save_zip, kind="secondary", padx=10, pady=6).pack(
-            side="left", padx=(0, self._s(6))
-        )
-        self._make_button(actions, self._tr("btn_backup_now"), self._on_backup_saves, kind="primary", padx=12, pady=6).pack(
-            side="left"
-        )
+        self._make_button(
+            actions,
+            self._tr("btn_import_save"),
+            self._on_import_save_zip,
+            kind="secondary",
+            padx=self._m(16, 10),
+            pady=self._m(10, 6),
+        ).pack(side="left", padx=(0, self._s(8)))
+        self._make_button(
+            actions,
+            self._tr("btn_backup_now"),
+            self._on_backup_saves,
+            kind="primary",
+            padx=self._m(18, 12),
+            pady=self._m(10, 6),
+        ).pack(side="left")
 
         # Auto-backup toggle strip
         c_opt = self._make_card(wrap)
@@ -931,7 +1469,14 @@ class KRAndroidLauncher:
         self._card_header(c_slots, "ACTIVE SAVE SLOTS")
         slots = save_manager.get_save_slots(self.data_dir)
         if not slots:
-            tk.Label(c_slots, text=self._tr("no_saves"), bg=t["bg_card"], fg=t["text_muted"], font=self._font(9), anchor="w").pack(fill="x")
+            tk.Label(
+                c_slots,
+                text=self._tr("no_saves"),
+                bg=t["bg_card"],
+                fg=t["text_muted"],
+                font=self._font(self._m(11, 9)),
+                anchor="w",
+            ).pack(fill="x")
         else:
             for sl in slots:
                 self._spec_row(c_slots, sl["folder"], f"{sl['title']} · {sl['size_kb']} KB · {sl['last_modified']}")
@@ -942,7 +1487,14 @@ class KRAndroidLauncher:
         self._card_header(c_bak, "BACKUP ARCHIVES (.ZIP)", self._tr("btn_restore_sel"), self._on_restore_selected)
         backups = save_manager.list_backups(self.data_dir)
         if not backups:
-            tk.Label(c_bak, text=self._tr("no_backups"), bg=t["bg_card"], fg=t["text_muted"], font=self._font(9), anchor="w").pack(fill="x")
+            tk.Label(
+                c_bak,
+                text=self._tr("no_backups"),
+                bg=t["bg_card"],
+                fg=t["text_muted"],
+                font=self._font(self._m(11, 9)),
+                anchor="w",
+            ).pack(fill="x")
         else:
             lb = tk.Listbox(
                 c_bak,
@@ -950,9 +1502,10 @@ class KRAndroidLauncher:
                 fg=t["text_primary"],
                 selectbackground=t["blue"],
                 selectforeground="#FFFFFF",
-                font=self._font(9, mono=True),
+                font=self._font(self._m(11, 9), mono=True),
                 relief="flat",
                 bd=0,
+                height=4,
                 highlightthickness=1,
                 highlightbackground=t["border"],
             )
@@ -973,14 +1526,28 @@ class KRAndroidLauncher:
         unlocked_cnt = sum(1 for item in all_tr if item["unlocked"])
 
         wrap = tk.Frame(self.viewport, bg=t["bg_canvas"])
-        wrap.pack(fill="both", expand=True, padx=self._s(18), pady=self._s(16))
+        wrap.pack(fill="both", expand=True, padx=self._s(18), pady=self._s(14))
 
         head = tk.Frame(wrap, bg=t["bg_canvas"])
         head.pack(fill="x", pady=(0, self._s(10)))
         left = tk.Frame(head, bg=t["bg_canvas"])
         left.pack(side="left", fill="x", expand=True)
-        tk.Label(left, text=f"{self._tr('trophies_title')} ({unlocked_cnt}/{len(all_tr)})", bg=t["bg_canvas"], fg=t["text_primary"], font=self._font(14, bold=True), anchor="w").pack(fill="x")
-        tk.Label(left, text=self._tr("trophies_sub"), bg=t["bg_canvas"], fg=t["text_secondary"], font=self._font(9), anchor="w").pack(fill="x")
+        tk.Label(
+            left,
+            text=f"{self._tr('trophies_title')} ({unlocked_cnt}/{len(all_tr)})",
+            bg=t["bg_canvas"],
+            fg=t["text_primary"],
+            font=self._font(self._m(16, 14), bold=True),
+            anchor="w",
+        ).pack(fill="x")
+        tk.Label(
+            left,
+            text=self._tr("trophies_sub"),
+            bg=t["bg_canvas"],
+            fg=t["text_secondary"],
+            font=self._font(self._m(11, 9)),
+            anchor="w",
+        ).pack(fill="x")
 
         self._make_segmented(
             head,
@@ -1006,13 +1573,27 @@ class KRAndroidLauncher:
             name = item["name_id"] if lang == "id" else item["name_en"]
             desc = item["desc_id"] if lang == "id" else item["desc_en"]
 
-            row = tk.Frame(inner, bg=t["bg_card"], pady=self._s(6))
+            row = tk.Frame(inner, bg=t["bg_card"], pady=self._s(self._m(8, 6)))
             row.pack(fill="x", padx=self._s(4))
             self._make_pill(row, tier.upper()[:4], fg=tier_fg, bg=t["bg_pill"]).pack(side="left", padx=(0, self._s(10)))
             info = tk.Frame(row, bg=t["bg_card"])
             info.pack(side="left", fill="x", expand=True)
-            tk.Label(info, text=name, bg=t["bg_card"], fg=t["text_primary"], font=self._font(9, bold=True), anchor="w").pack(fill="x")
-            tk.Label(info, text=desc, bg=t["bg_card"], fg=t["text_secondary"], font=self._font(8), anchor="w").pack(fill="x")
+            tk.Label(
+                info,
+                text=name,
+                bg=t["bg_card"],
+                fg=t["text_primary"],
+                font=self._font(self._m(12, 9), bold=True),
+                anchor="w",
+            ).pack(fill="x")
+            tk.Label(
+                info,
+                text=desc,
+                bg=t["bg_card"],
+                fg=t["text_secondary"],
+                font=self._font(self._m(10, 8)),
+                anchor="w",
+            ).pack(fill="x")
             st_lbl = "UNLOCKED" if item["unlocked"] else "LOCKED"
             self._make_pill(
                 row,
@@ -1033,8 +1614,22 @@ class KRAndroidLauncher:
         wrap = tk.Frame(sc_inner, bg=t["bg_canvas"])
         wrap.pack(fill="both", expand=True, padx=self._s(18), pady=self._s(14))
 
-        tk.Label(wrap, text=self._tr("settings_title"), bg=t["bg_canvas"], fg=t["text_primary"], font=self._font(14, bold=True), anchor="w").pack(fill="x")
-        tk.Label(wrap, text=self._tr("settings_sub"), bg=t["bg_canvas"], fg=t["text_secondary"], font=self._font(9), anchor="w").pack(fill="x", pady=(self._s(2), self._s(12)))
+        tk.Label(
+            wrap,
+            text=self._tr("settings_title"),
+            bg=t["bg_canvas"],
+            fg=t["text_primary"],
+            font=self._font(self._m(16, 14), bold=True),
+            anchor="w",
+        ).pack(fill="x")
+        tk.Label(
+            wrap,
+            text=self._tr("settings_sub"),
+            bg=t["bg_canvas"],
+            fg=t["text_secondary"],
+            font=self._font(self._m(11, 9)),
+            anchor="w",
+        ).pack(fill="x", pady=(self._s(2), self._s(12)))
 
         # Card 1: 1-Click Mobile Presets
         c_pre = self._make_card(wrap)
@@ -1042,24 +1637,20 @@ class KRAndroidLauncher:
         self._card_header(c_pre, self._tr("sec_presets"))
         pre_row = tk.Frame(c_pre, bg=t["bg_card"])
         pre_row.pack(fill="x")
-        self._make_button(pre_row, self._tr("btn_preset_auto"), self._on_apply_auto_preset, kind="primary", padx=12, pady=6).pack(
-            side="left", padx=(0, self._s(6))
+        self._make_button(pre_row, self._tr("btn_preset_auto"), self._on_apply_auto_preset, kind="primary").pack(
+            side="left", padx=(0, self._s(8))
         )
         self._make_button(
             pre_row,
             self._tr("btn_preset_540"),
             lambda: self._apply_preset("540p (960x540)", "30 FPS (Locked)", "true"),
             kind="secondary",
-            padx=10,
-            pady=6,
-        ).pack(side="left", padx=(0, self._s(6)))
+        ).pack(side="left", padx=(0, self._s(8)))
         self._make_button(
             pre_row,
             self._tr("btn_preset_720"),
             lambda: self._apply_preset("720p (1280x720)", "60 FPS (Native Unlock)", "true"),
             kind="secondary",
-            padx=10,
-            pady=6,
         ).pack(side="left")
 
         # Card 2: Graphics, Audio & Controls
@@ -1137,10 +1728,10 @@ class KRAndroidLauncher:
         self._spec_row(c_sys, "DATA_DIR", str(self.data_dir), mono=True)
         sys_btns = tk.Frame(c_sys, bg=t["bg_card"])
         sys_btns.pack(fill="x", pady=(self._s(8), 0))
-        self._make_button(sys_btns, self._tr("btn_clean_temp"), self._on_clean_temp, kind="secondary", padx=10, pady=5).pack(
-            side="left", padx=(0, self._s(6))
+        self._make_button(sys_btns, self._tr("btn_clean_temp"), self._on_clean_temp, kind="secondary").pack(
+            side="left", padx=(0, self._s(8))
         )
-        self._make_button(sys_btns, self._tr("btn_reset_all"), self._on_reset_defaults, kind="danger", padx=10, pady=5).pack(
+        self._make_button(sys_btns, self._tr("btn_reset_all"), self._on_reset_defaults, kind="danger").pack(
             side="left"
         )
 
@@ -1151,7 +1742,12 @@ class KRAndroidLauncher:
         self._spec_row(c_diag, "Device", f"{self.hw_info['device']} ({self.hw_info['arch']})")
         self._spec_row(c_diag, "SoC / CPU", self.hw_info["soc"])
         self._spec_row(c_diag, "RAM / Disk", f"{self.hw_info['ram_gb']} GB RAM · {self.hw_info['disk_free']}", mono=True)
-        self._spec_row(c_diag, "Vulkan ICD", self.hw_info["vulkan_summary"])
+        self._spec_row(
+            c_diag,
+            "Vulkan ICD",
+            self.hw_info["vulkan_summary"],
+            value_fg=t["green_text"] if self.hw_info.get("vulkan_13_ok", True) else t["amber_text"],
+        )
         self._spec_row(c_diag, "Shader Cache", cache_st["summary"], mono=True)
         self._spec_row(c_diag, "Recommended", self.hw_info["recommended"], value_fg=t["green_text"])
         if self.update_info:
@@ -1160,25 +1756,24 @@ class KRAndroidLauncher:
 
         diag_btns = tk.Frame(c_diag, bg=t["bg_card"])
         diag_btns.pack(fill="x", pady=(self._s(8), 0))
-        self._make_button(diag_btns, self._tr("btn_export_diag"), self._on_export_diagnostic, kind="primary", padx=12, pady=6).pack(
-            side="left", padx=(0, self._s(6))
+        self._make_button(diag_btns, self._tr("btn_export_diag"), self._on_export_diagnostic, kind="primary").pack(
+            side="left", padx=(0, self._s(8))
+        )
+        self._make_button(diag_btns, self._tr("btn_view_log"), self._on_view_last_log, kind="secondary").pack(
+            side="left", padx=(0, self._s(8))
         )
         self._make_button(
             diag_btns,
             self._tr("btn_check_update"),
             lambda: self._check_updates_async(silent=False),
             kind="secondary",
-            padx=10,
-            pady=6,
-        ).pack(side="left", padx=(0, self._s(6)))
+        ).pack(side="left", padx=(0, self._s(8)))
         if self.update_info and self.update_info.get("download_url") and not self.update_info.get("up_to_date", True):
             self._make_button(
                 diag_btns,
                 self._tr("btn_download_update"),
                 self._on_download_update,
                 kind="success",
-                padx=10,
-                pady=6,
             ).pack(side="left")
 
         # Card 5: Credits
@@ -1224,7 +1819,9 @@ class KRAndroidLauncher:
 
     def _on_browse_game_dir(self) -> None:
         initial = self.cfg.get("game_dir") or ("/storage/emulated/0" if os.path.isdir("/storage/emulated/0") else str(self.data_dir))
-        chosen = filedialog.askdirectory(title="Select CUSA17374 Game Folder", initialdir=initial)
+        chosen = nixport_host.pick_directory(initial)
+        if chosen is None:
+            chosen = filedialog.askdirectory(title="Select CUSA17374 Game Folder", initialdir=initial)
         if not chosen:
             return
         resolved = acfg.resolve_game_dir(chosen)
@@ -1233,6 +1830,7 @@ class KRAndroidLauncher:
             return
         self._save_and_sync(game_dir=str(resolved))
         self._append_log(f"[GAME] Selected CUSA17374 directory: {resolved}")
+        nixport_host.toast(f"CUSA17374 ready: {resolved.name}")
         self._build_ui()
 
     def _on_verify_game(self) -> None:
@@ -1246,10 +1844,12 @@ class KRAndroidLauncher:
         title_id, app_ver = self._game_meta()
         msg = f"[VERIFY] OK: {title_id} v{app_ver} | eboot.bin: OK | param.sfo: {'OK' if sfo_ok else 'MISSING'} | sharedassets0.assets: {'OK' if assets_ok else 'MISSING'}"
         self._append_log(msg)
+        nixport_host.toast(f"{title_id} v{app_ver}: eboot.bin OK")
 
     def _on_clear_cache(self) -> None:
         res = acfg.clear_shader_cache(self.data_dir)
         self._append_log(f"[CACHE] Cleared {res['removed_files']} file(s), freed {res['freed_mb']} MB.")
+        nixport_host.toast(f"Cleared shader cache ({res['freed_mb']} MB)")
         self._build_ui()
 
     def _on_clean_temp(self) -> None:
@@ -1261,6 +1861,7 @@ class KRAndroidLauncher:
         if not messagebox.askyesno("Reset Defaults", "Reset all launcher graphics, audio, and UI settings to mobile defaults?"):
             return
         self.cfg = acfg.reset_to_defaults(self.data_dir, keep_game_dir=True)
+        acfg.sync_android_engine_config(self.data_dir, self.cfg, window_size=self._target_window_size())
         self._append_log("[CONFIG] Restored factory mobile defaults.")
         self._build_ui()
 
@@ -1271,8 +1872,96 @@ class KRAndroidLauncher:
             self.root.clipboard_clear()
             self.root.clipboard_append(txt)
             self._append_log("[SPECS] Copied device specs to clipboard.")
+            nixport_host.toast("Specs copied to clipboard")
         except Exception as exc:
             self._append_log(f"[SPECS] Clipboard unavailable: {exc}")
+
+    def _collect_combined_logs(self, max_lines_each: int = 160) -> str:
+        sections: list[str] = []
+        candidates = [
+            ("launch.log", acfg.get_log_dir(self.data_dir) / "launch.log"),
+            ("shad_log.txt", self.data_dir / "bin" / "user" / "log" / "shad_log.txt"),
+            ("shadps4.log", self.data_dir / "bin" / "user" / "log" / "shadps4.log"),
+        ]
+        for label, path in candidates:
+            if path.is_file():
+                try:
+                    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+                    tail = "\n".join(lines[-max_lines_each:]) if lines else "(empty file)"
+                    sections.append(f"===== {label} ({path}) =====\n{tail}")
+                except Exception as exc:
+                    sections.append(f"===== {label} =====\nError reading log: {exc}")
+        if not sections:
+            sections.append("===== Session Buffer =====\n" + "\n".join(self.log_lines))
+        return "\n\n".join(sections)
+
+    def _on_view_last_log(self) -> None:
+        t = self._t()
+        win = tk.Toplevel(self.root)
+        win.title(self._tr("log_viewer_title"))
+        win.configure(bg=t["bg_canvas"])
+        if self.on_device:
+            sw, sh = self._screen_dims()
+            w = max(600, int(sw * 0.90))
+            h = max(340, int(sh * 0.86))
+            x = max(0, (sw - w) // 2)
+            y = max(0, (sh - h) // 2)
+            win.geometry(f"{w}x{h}+{x}+{y}")
+        else:
+            win.geometry("860x520")
+        win.transient(self.root)
+
+        head = tk.Frame(win, bg=t["bg_sidebar"], padx=self._s(16), pady=self._s(10))
+        head.pack(fill="x")
+        tk.Label(
+            head,
+            text=self._tr("log_viewer_title"),
+            bg=t["bg_sidebar"],
+            fg=t["text_primary"],
+            font=self._font(self._m(14, 12), bold=True),
+        ).pack(side="left")
+
+        combined_text = self._collect_combined_logs()
+
+        def _copy_all() -> None:
+            try:
+                self.root.clipboard_clear()
+                self.root.clipboard_append(combined_text)
+                nixport_host.toast("Log copied")
+            except Exception:
+                pass
+
+        self._make_button(head, self._tr("btn_close"), win.destroy, kind="danger", padx=14, pady=6).pack(side="right")
+        self._make_button(
+            head, self._tr("btn_export_diag"), self._on_export_diagnostic, kind="primary", padx=14, pady=6
+        ).pack(side="right", padx=(0, self._s(8)))
+        self._make_button(head, self._tr("btn_copy_log"), _copy_all, kind="secondary", padx=14, pady=6).pack(
+            side="right", padx=(0, self._s(8))
+        )
+
+        body = tk.Frame(win, bg=t["bg_canvas"], padx=self._s(14), pady=self._s(12))
+        body.pack(fill="both", expand=True)
+        sb = tk.Scrollbar(body, orient="vertical", width=self._s(16) if self.on_device else 12)
+        txt = tk.Text(
+            body,
+            bg=t["bg_input"],
+            fg=t["text_primary"],
+            font=self._font(self._m(10, 9), mono=True),
+            relief="flat",
+            bd=0,
+            wrap="word",
+            padx=self._s(10),
+            pady=self._s(8),
+            yscrollcommand=sb.set,
+            highlightthickness=1,
+            highlightbackground=t["border"],
+        )
+        sb.configure(command=txt.yview)
+        txt.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        txt.insert("1.0", combined_text + "\n")
+        txt.see("end")
+        txt.configure(state="disabled")
 
     def _on_export_diagnostic(self) -> None:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1295,6 +1984,7 @@ class KRAndroidLauncher:
         res = adiag.export_diagnostic_bundle(self.data_dir, dest, self.hw_info, VERSION, self._game_dir())
         self._append_log(f"[DIAG] {res['message']}")
         if res["success"]:
+            nixport_host.toast(f"Saved {dest.name}")
             messagebox.showinfo("Diagnostic ZIP", f"{res['message']}\n\nSaved to:\n{res['path']}")
         else:
             messagebox.showerror("Diagnostic ZIP", res["message"])
@@ -1350,21 +2040,26 @@ class KRAndroidLauncher:
     def _on_backup_saves(self) -> None:
         res = save_manager.backup_saves(self.data_dir)
         self._append_log(f"[SAVE] {res['message']}")
+        if res.get("success"):
+            nixport_host.toast(res["message"])
         if self.active_tab == "saves":
             self._render_active_tab()
 
     def _on_import_save_zip(self) -> None:
         initial = "/storage/emulated/0/Download" if os.path.isdir("/storage/emulated/0/Download") else str(self.data_dir)
-        chosen = filedialog.askopenfilename(
-            title="Import Save Archive (.zip)",
-            initialdir=initial,
-            filetypes=[("Save Archive (*.zip)", "*.zip")],
-        )
+        chosen = nixport_host.pick_file(initial, extensions=("zip",))
+        if chosen is None:
+            chosen = filedialog.askopenfilename(
+                title="Import Save Archive (.zip)",
+                initialdir=initial,
+                filetypes=[("Save Archive (*.zip)", "*.zip")],
+            )
         if not chosen:
             return
         res = save_manager.import_save_zip(self.data_dir, Path(chosen))
         self._append_log(f"[SAVE] {res['message']}")
         if res["success"]:
+            nixport_host.toast("Save imported")
             messagebox.showinfo("Import Save", res["message"])
         else:
             messagebox.showerror("Import Save", res["message"])
@@ -1406,6 +2101,7 @@ class KRAndroidLauncher:
                     self._append_log(m)
                     if hasattr(self, "patch_progress_lbl") and self.patch_progress_lbl.winfo_exists():
                         self.patch_progress_lbl.configure(text=m)
+
                 self.root.after(0, _ui_update)
 
             try:
@@ -1425,6 +2121,8 @@ class KRAndroidLauncher:
         self.patch_busy = False
         self._patch_progress_text = res.get("message", "")
         self._append_log(f"[PATCH-ID] {self._patch_progress_text}")
+        if res.get("success"):
+            nixport_host.toast(self._patch_progress_text)
         self._build_ui()
 
     def _on_play(self) -> None:
@@ -1435,7 +2133,8 @@ class KRAndroidLauncher:
             messagebox.showwarning(self._tr("err_no_eboot_title"), self._tr("err_no_eboot_msg"))
             return
 
-        acfg.sync_android_engine_config(self.data_dir, self.cfg)
+        win_size = self._target_window_size()
+        acfg.sync_android_engine_config(self.data_dir, self.cfg, window_size=win_size)
         if self.cfg.get("auto_backup_saves", "true") == "true":
             ab = save_manager.auto_backup_saves(self.data_dir, keep=5)
             if ab.get("success"):
@@ -1451,15 +2150,20 @@ class KRAndroidLauncher:
             return
 
         eboot = gd / "eboot.bin"
-        game_args = [str(runtime_bin), "-g", str(eboot.resolve()), "-f", "true"]
+        fs_flag = "false" if self.on_device else "true"
+        game_args = [str(runtime_bin), "-g", str(eboot.resolve()), "-f", fs_flag]
         if self.cfg.get("show_fps") == "true":
             game_args.append("--show-fps")
 
         env = dict(os.environ)
         env["HOME"] = str(self.data_dir.parent)
         env["XDG_DATA_HOME"] = str(self.data_dir / "bin" / "user")
-        if self.cfg.get("video_backend", "auto") != "auto":
-            env["SDL_VIDEODRIVER"] = self.cfg["video_backend"]
+        if sys.platform != "win32":
+            vid_drv = self.cfg.get("video_backend", "auto")
+            env["SDL_VIDEODRIVER"] = vid_drv if vid_drv != "auto" else "x11"
+            env["SDL_AUDIO_DRIVER"] = env.get("SDL_AUDIO_DRIVER", "pulseaudio")
+            env["SDL_JOYSTICK_HIDAPI"] = "0"
+            env["MESA_VK_WSI_PRESENT_MODE"] = env.get("MESA_VK_WSI_PRESENT_MODE", "fifo")
 
         fxd_root = Path(os.environ.get("FXD_ROOT", "/data/user/0/ro.cobrabm.fexdroid/files/rootfs"))
         loader = fxd_root / "usr" / "lib" / "aarch64-linux-gnu" / "ld-linux-aarch64.so.1"
@@ -1497,6 +2201,14 @@ class KRAndroidLauncher:
         self.game_running = True
         self._build_ui()
 
+        # Hide Tkinter launcher window completely so WM-less Xvfb shows only the 1760x720 Vulkan surface
+        if self.on_device:
+            try:
+                self.root.withdraw()
+                self.root.update_idletasks()
+            except Exception:
+                pass
+
         t_start = time.monotonic()
 
         def run_proc() -> None:
@@ -1505,6 +2217,10 @@ class KRAndroidLauncher:
                 with open(log_path, "w", encoding="utf-8", errors="replace") as lf:
                     lf.write(f"=== Kamen Rider: Memory of Heroes Launch ({time.strftime('%Y-%m-%d %H:%M:%S')}) ===\n")
                     lf.write(f"CWD: {run_cwd}\n")
+                    lf.write(f"WINDOW_SIZE: {win_size}\n")
+                    lf.write(f"DISPLAY: {env.get('DISPLAY', '')} | SDL_VIDEODRIVER: {env.get('SDL_VIDEODRIVER', '')}\n")
+                    lf.write(f"VK_ICD_FILENAMES: {env.get('VK_ICD_FILENAMES', '')}\n")
+                    lf.write(f"LD_PRELOAD: {env.get('LD_PRELOAD', '')}\n")
                     lf.write(f"CMD: {' '.join(cmd)}\n\n")
                     lf.flush()
                     proc = subprocess.Popen(cmd, cwd=str(run_cwd), env=env, stdout=lf, stderr=subprocess.STDOUT)
@@ -1520,8 +2236,33 @@ class KRAndroidLauncher:
 
     def _on_game_exit(self, rc: int) -> None:
         self.game_running = False
+        if self.on_device:
+            try:
+                self.root.deiconify()
+                self._configure_window()
+                self.root.lift()
+                self.root.focus_force()
+            except Exception:
+                pass
+
         self._append_log(f"[LAUNCH] Game session exited (code {rc}).")
+        # Tail key diagnostic lines from shad_log.txt / launch.log into session buffer
+        for label, p in (
+            ("launch", acfg.get_log_dir(self.data_dir) / "launch.log"),
+            ("engine", self.data_dir / "bin" / "user" / "log" / "shad_log.txt"),
+        ):
+            if p.is_file():
+                try:
+                    lines = [ln.strip() for ln in p.read_text(encoding="utf-8", errors="replace").splitlines() if ln.strip()]
+                    for tail_ln in lines[-6:]:
+                        self._append_log(f"[{label}] {tail_ln}")
+                except Exception:
+                    pass
+
         self._build_ui()
+        if rc != 0:
+            nixport_host.toast(f"Game exited with code {rc}. Opening log viewer.")
+            self._on_view_last_log()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1539,7 +2280,7 @@ def main(argv: list[str] | None = None) -> int:
         app._cycle_language()
         root.update_idletasks()
         root.destroy()
-        print("[SMOKE-TEST] Clean UI v1.0.0 launcher initialized & rendered all 5 tabs + Dark/Light + 5-Lang OK.")
+        print("[SMOKE-TEST] Mobile-First & Clean Desktop UI v1.0.0 rendered all 5 tabs + Dark/Light + 5-Lang OK.")
         return 0
 
     root.mainloop()

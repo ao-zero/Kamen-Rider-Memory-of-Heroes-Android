@@ -55,6 +55,10 @@ exec_arm64_bin() {
     if [ -n "$PAD_PRELOAD" ]; then
         export LD_PRELOAD="$PAD_PRELOAD"
     fi
+    export SDL_VIDEODRIVER="${SDL_VIDEODRIVER:-x11}"
+    export SDL_AUDIO_DRIVER="${SDL_AUDIO_DRIVER:-pulseaudio}"
+    export SDL_JOYSTICK_HIDAPI=0
+    export MESA_VK_WSI_PRESENT_MODE="${MESA_VK_WSI_PRESENT_MODE:-fifo}"
     if [ ! -e "/lib/ld-linux-aarch64.so.1" ] && [ -x "$LOADER" ]; then
         LD_LIBRARY_PATH="$LIB_PATH" exec "$LOADER" --library-path "$LIB_PATH" "$BIN_PATH" "$@"
     fi
@@ -67,12 +71,13 @@ setup_env() {
     export KR_APP_DIR="$TREE"
     export KR_DATA_DIR="$DATA"
     export KR_CONFIG="$CONFIG"
+    export DISPLAY="${DISPLAY:-:0}"
     if [ -n "${FEXDROID_PRESENT:-}" ]; then
         export KR_DEVICE_UI="${KR_DEVICE_UI:-1}"
     fi
     export XDG_DATA_HOME="$DATA/bin/user"
 
-    # Point Tcl/Tk and XKB to nixport's rootfs (non-root Android has no /usr)
+    # Point Tcl/Tk, SSL CA certificates, XKB, and Fontconfig to nixport's rootfs
     if [ -z "${TCL_LIBRARY:-}" ]; then
         for cand in "$HOST/usr/share/tcltk/tcl8.6" "$HOST/usr/lib/tcl8.6"; do
             if [ -d "$cand" ]; then
@@ -88,6 +93,12 @@ setup_env() {
                 break
             fi
         done
+    fi
+    if [ -z "${SSL_CERT_FILE:-}" ] && [ -f "$HOST/etc/ssl/certs/ca-certificates.crt" ]; then
+        export SSL_CERT_FILE="$HOST/etc/ssl/certs/ca-certificates.crt"
+    fi
+    if [ -z "${SSL_CERT_DIR:-}" ] && [ -d "$HOST/etc/ssl/certs" ]; then
+        export SSL_CERT_DIR="$HOST/etc/ssl/certs"
     fi
     if [ -z "${XKB_CONFIG_ROOT:-}" ] && [ -d "$HOST/usr/share/X11/xkb" ]; then
         export XKB_CONFIG_ROOT="$HOST/usr/share/X11/xkb"
@@ -110,7 +121,7 @@ setup_env
 case "$VERB" in
     launcher)
         {
-            echo "=== launcher $(date) DISPLAY=${DISPLAY:-unset} TCL_LIBRARY=${TCL_LIBRARY:-unset} TK_LIBRARY=${TK_LIBRARY:-unset} ==="
+            echo "=== launcher $(date) DISPLAY=${DISPLAY:-unset} TCL_LIBRARY=${TCL_LIBRARY:-unset} SSL=${SSL_CERT_FILE:-unset} ==="
         } >> "$DATA/logs/launch.log" 2>&1 || true
         exec_py "$TREE/launcher/kr_android_launcher.py" "$@" 2>> "$DATA/logs/launch.log"
         ;;
@@ -138,14 +149,20 @@ case "$VERB" in
         VID_DRV="$(run_py "$TREE/entry_main.py" get-key video_backend "$CONFIG" || echo auto)"
         if [ -n "$VID_DRV" ] && [ "$VID_DRV" != "auto" ]; then
             export SDL_VIDEODRIVER="$VID_DRV"
-        fi
-        # Run from $DATA/bin so shadPS4 detects portable ./user/ (config.json, input_config, savedata)
-        cd "$DATA/bin"
-        echo "[kr-moh] Launching $CORE_BIN -g $GAME_DIR/eboot.bin (cwd=$DATA/bin)" >&2
-        if [ "$SHOW_FPS" = "true" ]; then
-            exec_arm64_bin "$CORE_BIN" -g "$GAME_DIR/eboot.bin" -f true --show-fps "$@" >"$LOG_FILE" 2>&1
         else
-            exec_arm64_bin "$CORE_BIN" -g "$GAME_DIR/eboot.bin" -f true "$@" >"$LOG_FILE" 2>&1
+            export SDL_VIDEODRIVER="x11"
+        fi
+        cd "$DATA/bin"
+        {
+            echo "=== direct game launch $(date) ==="
+            echo "CORE_BIN=$CORE_BIN"
+            echo "GAME_DIR=$GAME_DIR"
+            echo "DISPLAY=${DISPLAY:-} VK_ICD_FILENAMES=${VK_ICD_FILENAMES:-} FEXDROID_PRESENT=${FEXDROID_PRESENT:-}"
+        } > "$LOG_FILE" 2>&1
+        if [ "$SHOW_FPS" = "true" ]; then
+            exec_arm64_bin "$CORE_BIN" -g "$GAME_DIR/eboot.bin" -f false --show-fps "$@" >>"$LOG_FILE" 2>&1
+        else
+            exec_arm64_bin "$CORE_BIN" -g "$GAME_DIR/eboot.bin" -f false "$@" >>"$LOG_FILE" 2>&1
         fi
         ;;
 

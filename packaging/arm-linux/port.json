@@ -12,14 +12,22 @@
       "name": "KR Memory of Heroes Launcher",
       "kind": "launcher",
       "command": "AppRun launcher",
-      "desc": "Atur folder CUSA17374, resolusi 540p/720p/1080p, 30/60 FPS, dan Patch Bahasa Indonesia (Bakka Sub)"
+      "desc": "Configure CUSA17374 folder, 540p/720p presets, 30/60 FPS, and Indonesian Patch (Bakka Sub)",
+      "input": {
+        "style": "touch",
+        "touchpad": "direct"
+      }
     },
     {
       "id": "game",
-      "name": "Direct Launch (CUSA17374)",
-      "kind": "game",
+      "name": "Play Now (Direct Launch)",
+      "kind": "direct",
+      "display": "direct",
       "command": "AppRun game",
-      "desc": "Langsung jalankan game menggunakan konfigurasi tersimpan di home/kr_moh/launcher.ini"
+      "desc": "Launch Kamen Rider: Memory of Heroes directly with virtual gamepad & direct Vulkan output",
+      "input": {
+        "style": "gamepad"
+      }
     }
   ],
   "storage": {

@@ -7,11 +7,13 @@
   "commit": "be6bc2e9c60799e071dd2fafa6216e8d80ec619c",
   "features": {
     "ENABLE_FEX_GUEST_CPU": true,
-    "ENABLE_BACHATA_RUNTIME": true,
+    "ENABLE_BACHATA_RUNTIME": false,
+    "SDL_SHARED": true,
+    "SDL_PULSEAUDIO": true,
     "ENABLE_USERFAULTFD": false,
     "SDL_WAYLAND": false
   },
   "builder_image": "debian:trixie",
   "target_arch": "aarch64-linux-gnu",
-  "notes": "Native AArch64 shadPS4 Vulkan 1.3 + FEXCore guest x86-64 CPU backend targeting nixport Debian Trixie ARM64 rootfs."
+  "notes": "Native AArch64 shadPS4 Vulkan 1.3 + FEXCore guest x86-64 CPU + dynamic libSDL3.so.0 (for nixport libfexpad.so virtual gamepad & PulseAudio)."
 }
