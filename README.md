@@ -58,18 +58,38 @@ Featuring the heroic trio:
 
 ---
 
-## Android Device Requirements
+## Android Device Requirements & Compatibility
+
+### Hardware Requirements
 
 | Component | Minimum (`540p`, `30 FPS`) | Recommended (`720p`, `60 FPS`) |
 | :--- | :--- | :--- |
-| **OS** | Android 11+ (ARM64 / `aarch64`) | Android 13 / 14 / 15 (ARM64) |
-| **SoC / GPU** | Qualcomm Snapdragon 865 / 870 / 7+ Gen 2 / 8 Gen 1 (Adreno 650 / 7xx) | Qualcomm Snapdragon 8 Gen 2 / 8 Gen 3 / 8 Elite (Adreno 740+) |
-| **Vulkan Driver** | Vulkan 1.3 via **Mesa Turnip** (configured in `nixport`) | Latest Mesa Turnip (Vulkan 1.3 / 1.4) |
-| **RAM** | 8 GB | 12 GB or 16 GB |
-| **Free Storage** | 15 GB (fast internal UFS storage) | 20 GB+ (UFS 3.1 / 4.0) |
+| **OS** | Android 11+ (ARM64 / `aarch64`, 4 KB page size) | Android 13 / 14 / 15 / 16 (ARM64) |
+| **SoC / GPU** | Qualcomm Snapdragon 865 / 870 / 7+ Gen 2 / 8 Gen 1 (Adreno 650 / 725 / 730) | Qualcomm Snapdragon 8+ Gen 1 / 8s Gen 3 / 8 Gen 2 / 8 Gen 3 (Adreno 730 / 735 / 740 / 750) |
+| **Vulkan Driver** | Vulkan 1.3 via **Mesa Turnip** (built-in or configured in `nixport`) | Latest Mesa Turnip (Vulkan 1.3 / 1.4) |
+| **RAM** | 8 GB *(close background apps; long sessions may trigger Android OOM)* | **12 GB or 16 GB** *(strongly recommended: PS4 3D games use 5-6 GB RAM + 3-4 GB VRAM)* |
+| **Free Storage** | 15 GB (internal UFS 3.1+ storage) | 20 GB+ (UFS 3.1 / 4.0) |
 | **Controls** | On-screen Touch (`virtualkeys.json`) | Bluetooth / USB-C Gamepad (DualSense, Xbox, GameSir, Backbone) |
 
-> **GPU Note:** Older Adreno 5xx GPUs (such as Snapdragon 636) and non-Snapdragon GPUs (Mali, Xclipse, PowerVR) are not supported because `shadPS4` requires full Vulkan 1.3 extensions currently provided on Android by **Mesa Turnip** (Adreno 6xx/7xx/8xx).
+### Recommended Devices (Best Value for `nixport` + Turnip)
+
+| Tier | Example Phones | Chipset / GPU | Target Experience |
+| :--- | :--- | :--- | :--- |
+| **Entry / Budget** | Poco F3, Poco F4, Sony Xperia 5 II / 1 II, LG V60 | Snapdragon 865 / 870 (Adreno 650), 8 GB RAM | `540p` 30 FPS (close background apps) |
+| **Best Value (Sweet Spot)** | **Poco F5 (12/256 GB)**, **Poco F6 (12/512 GB)** | Snapdragon 7+ Gen 2 (Adreno 725) / 8s Gen 3 (Adreno 735), **12 GB RAM** | `540p` - `720p` 30-60 FPS, safe RAM headroom |
+| **High-End (Most Mature Turnip)** | **Poco F6 Pro**, OnePlus 12R, iQOO Neo 9, Galaxy S23 / S24 Ultra, RedMagic 8 / 9 Pro | Snapdragon 8 Gen 2 / 8 Gen 3 (Adreno 740 / 750), 12-16 GB RAM | `720p` 60 FPS with best Mesa Turnip stability |
+
+### NOT Supported / Will NOT Work
+
+Please check your phone's chipset before downloading. The following devices **cannot** run this port properly due to missing **Mesa Turnip** Vulkan 1.3 driver support, weak GPU architecture, or insufficient RAM:
+
+- **MediaTek (All Dimensity & Helio chips, e.g. Dimensity 8300 / 9300, Helio G99):** Uses ARM Mali / Immortalis GPUs, which are **not supported by Mesa Turnip**. `shadPS4` Vulkan 1.3 rendering will fail or show severe graphical corruption.
+- **Samsung Exynos (Mali / Xclipse GPUs):** Not supported by Mesa Turnip.
+- **Google Tensor (Pixel 6 / 7 / 8 / 9):** Uses Mali GPUs; not supported by Mesa Turnip.
+- **Huawei Kirin & Unisoc:** Uses Mali / Maleoon / PowerVR GPUs; not supported.
+- **Budget / Mid-Range Snapdragon 4xx & 6xx (e.g. Snapdragon 636, 665, 680, 685, 695, 6 Gen 1) and Adreno 5xx GPUs:** Older Adreno 5xx GPUs lack full Vulkan 1.3 / Turnip support, and entry-level 6xx chips lack the GPU throughput and RAM required for PS4 emulation.
+- **Devices with 4 GB or 6 GB RAM:** PS4 emulation + FEXCore JIT + Vulkan shaders require heavy memory pools and will immediately crash (Out of Memory).
+- **Android 12+ Phantom Process Killer Tip:** If Android kills the game session unexpectedly, enable **Developer Options -> Disable child process restrictions** (or run `adb shell device_config put activity_manager max_phantom_processes 2147483647`).
 
 ---
 

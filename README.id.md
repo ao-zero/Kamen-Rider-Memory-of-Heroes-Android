@@ -57,18 +57,38 @@ Dibangun khusus untuk tiga Rider utama:
 
 ---
 
-## Spesifikasi Perangkat Android
+## Spesifikasi & Kompatibilitas Perangkat Android
+
+### Kebutuhan Hardware
 
 | Komponen | Minimum (`540p`, `30 FPS`) | Rekomendasi (`720p`, `60 FPS`) |
 | :--- | :--- | :--- |
-| **OS** | Android 11+ (ARM64 / `aarch64`) | Android 13 / 14 / 15 (ARM64) |
-| **Chipset / GPU** | Qualcomm Snapdragon 865 / 870 / 7+ Gen 2 / 8 Gen 1 (Adreno 650 / 7xx) | Qualcomm Snapdragon 8 Gen 2 / 8 Gen 3 / 8 Elite (Adreno 740+) |
-| **Driver Vulkan** | Vulkan 1.3 via **Mesa Turnip** (diatur di `nixport`) | Mesa Turnip terbaru (Vulkan 1.3 / 1.4) |
-| **RAM** | 8 GB | 12 GB atau 16 GB |
-| **Penyimpanan Kosong** | 15 GB (internal storage cepat / UFS) | 20 GB+ (UFS 3.1 / 4.0) |
+| **OS** | Android 11+ (ARM64 / `aarch64`, 4 KB page size) | Android 13 / 14 / 15 / 16 (ARM64) |
+| **Chipset / GPU** | Qualcomm Snapdragon 865 / 870 / 7+ Gen 2 / 8 Gen 1 (Adreno 650 / 725 / 730) | Qualcomm Snapdragon 8+ Gen 1 / 8s Gen 3 / 8 Gen 2 / 8 Gen 3 (Adreno 730 / 735 / 740 / 750) |
+| **Driver Vulkan** | Vulkan 1.3 via **Mesa Turnip** (bawaan atau diatur di `nixport`) | Mesa Turnip terbaru (Vulkan 1.3 / 1.4) |
+| **RAM** | 8 GB *(tutup semua aplikasi lain; sesi panjang berisiko force close OOM)* | **12 GB atau 16 GB** *(sangat disarankan: game 3D PS4 memakai 5-6 GB RAM + 3-4 GB VRAM)* |
+| **Penyimpanan Kosong** | 15 GB (internal UFS 3.1+) | 20 GB+ (UFS 3.1 / 4.0) |
 | **Kontrol** | Layar Sentuh (`virtualkeys.json` bawaan) | Gamepad Bluetooth / USB-C (DualSense, Xbox, GameSir, Backbone) |
 
-> **Catatan GPU:** GPU Adreno 5xx lama (seperti Snapdragon 636) dan GPU non-Snapdragon (Mali, Xclipse, PowerVR) tidak didukung karena `shadPS4` membutuhkan ekstensi Vulkan 1.3 lengkap dari driver **Mesa Turnip** (Adreno 6xx/7xx/8xx).
+### Rekomendasi HP Android (Cocok untuk `nixport` + Turnip)
+
+| Kelas | Contoh HP | Chipset / GPU | Target Performa |
+| :--- | :--- | :--- | :--- |
+| **Termurah / Entry** | Poco F3, Poco F4, Sony Xperia 5 II / 1 II, LG V60 | Snapdragon 865 / 870 (Adreno 650), RAM 8 GB | `540p` 30 FPS (tutup aplikasi latar belakang) |
+| **Paling Worth It (Sweet Spot)** | **Poco F5 (12/256 GB)**, **Poco F6 (12/512 GB)** | Snapdragon 7+ Gen 2 (Adreno 725) / 8s Gen 3 (Adreno 735), **RAM 12 GB** | `540p` - `720p` 30-60 FPS, RAM lega & lebih adem |
+| **High-End (Turnip Paling Matang)** | **Poco F6 Pro**, OnePlus 12R, iQOO Neo 9, Galaxy S23 / S24 Ultra, RedMagic 8 / 9 Pro | Snapdragon 8 Gen 2 / 8 Gen 3 (Adreno 740 / 750), RAM 12-16 GB | `720p` 60 FPS dengan stabilitas Mesa Turnip terbaik |
+
+### TIDAK DIDUKUNG / Tidak Bisa Dijalankan
+
+Pastikan chipset HP Anda sesuai sebelum mengunduh. Perangkat berikut **tidak bisa** menjalankan port ini dengan normal karena tidak mendukung driver **Mesa Turnip** Vulkan 1.3, GPU terlalu lemah, atau RAM tidak mencukupi:
+
+- **MediaTek (Semua Dimensity & Helio, seperti Dimensity 8300 / 9300, Helio G99):** Memakai GPU ARM Mali / Immortalis yang **tidak didukung Mesa Turnip**. Render Vulkan 1.3 `shadPS4` akan gagal atau rusak parah.
+- **Samsung Exynos (GPU Mali / Xclipse):** Tidak didukung Mesa Turnip.
+- **Google Tensor (Pixel 6 / 7 / 8 / 9):** Memakai GPU Mali; tidak didukung Mesa Turnip.
+- **Huawei Kirin & Unisoc:** Memakai GPU Mali / Maleoon / PowerVR; tidak didukung.
+- **Snapdragon seri 4xx & 6xx (seperti Snapdragon 636, 665, 680, 685, 695, 6 Gen 1) & GPU Adreno 5xx:** GPU Adreno 5xx tidak mendukung Vulkan 1.3 / Turnip penuh, dan seri 6xx tidak cukup kuat untuk emulasi PS4.
+- **HP dengan RAM 4 GB atau 6 GB:** Emulasi PS4 + JIT FEXCore + shader Vulkan butuh memori besar dan akan langsung force close (*Out of Memory*).
+- **Tips Android 12+ (Phantom Process Killer):** Jika Android menutup paksa proses game secara tiba-tiba, aktifkan **Opsi Pengembang -> Nonaktifkan pembatasan proses turunan** (*Disable child process restrictions*), atau via ADB: `adb shell device_config put activity_manager max_phantom_processes 2147483647`.
 
 ---
 
