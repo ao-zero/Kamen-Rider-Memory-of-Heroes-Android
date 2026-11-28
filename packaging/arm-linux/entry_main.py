@@ -129,9 +129,15 @@ def _build_schema(cfg: dict, data_dir: Path, patches_dir: Path) -> dict:
                     "key": "language",
                     "title": "UI Language",
                     "type": "enum",
-                    "enum": ["id", "en"],
-                    "labels": ["Bahasa Indonesia", "English"],
+                    "enum": ["id", "en", "es", "pt-BR", "pt-PT"],
+                    "labels": ["Bahasa Indonesia", "English", "Espanol", "Portugues (BR)", "Portugues (PT)"],
                     "default": "id",
+                },
+                {
+                    "key": "auto_backup_saves",
+                    "title": "Auto-Backup Saves Before Launch (Keep 5)",
+                    "type": "boolean",
+                    "default": True,
                 },
                 {
                     "key": "theme",

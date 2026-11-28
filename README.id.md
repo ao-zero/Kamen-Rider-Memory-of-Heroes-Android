@@ -44,15 +44,16 @@ Dibangun khusus untuk tiga Rider utama:
 
 ## Fitur Utama
 
-- **Clean UI Launcher v1.0.0 (Dark & Light Mode):** Antarmuka bersih yang terinspirasi [XSEmu](https://github.com/zortos293/xsemu) berbasis Pure Python `tkinter` (0 dependensi eksternal), otomatis menyesuaikan layar penuh dan skala sentuh saat berjalan di `nixport` (`FEXDROID_PRESENT`).
+- **Clean UI Launcher v1.0.0 (Dark & Light Mode, 5 Bahasa):** Antarmuka bersih yang terinspirasi [XSEmu](https://github.com/zortos293/xsemu) berbasis Pure Python `tkinter` (0 dependensi eksternal) dengan dukungan **5 bahasa** (`ID`, `EN`, `ES`, `PT-BR`, `PT-PT`), otomatis menyesuaikan layar penuh dan skala sentuh saat berjalan di `nixport` (`FEXDROID_PRESENT`).
 - **Built-in Patch Bahasa Indonesia (Bakka Sub x AO Zero):**
   - 1-klik aktifkan **5.993 baris terjemahan** Bahasa Indonesia (`help_list`, `menu_text`, `mission_talk`, `name_text`) pada `CUSA17374/Media/sharedassets0.assets`.
   - Pure-Python Unity `2017.4.40f1` patcher dengan **backup vanilla otomatis** di `home/kr_moh/bin/user/vanilla_backup/` agar bisa dikembalikan ke **Original (EN/JP)** kapan saja.
-- **Preset Performa Mobile (`540p / 720p / 1080p` & `30 / 60 FPS`):**
-  - Sinkronisasi otomatis `config.json` (`vblank_frequency` 60 Hz untuk 30 FPS Locked, 120 Hz untuk 60 FPS Native Unlock, `Mailbox`, `async_shader_compilation`, `FSR + RCAS`, `pipeline_cache_enabled`).
+- **Auto-Preset Mobile 1-Klik & Preset Performa (`540p / 720p / 1080p` & `30 / 60 FPS`):**
+  - Deteksi otomatis spesifikasi HP (SoC, RAM, penyimpanan, Vulkan Turnip ICD, ukuran Shader Cache) lengkap dengan tombol **Auto-Preset** dan sinkronisasi otomatis `config.json`.
   - Proteksi anti-bentrok input: otomatis memaksa `mouse_to_joystick = none` saat `FEXDROID_PRESENT` aktif agar analog kanan sentuh tidak bentrok dengan pointer.
+- **Ekspor ZIP Diagnosa 1-Klik & Update Checker:** Mengemas spesifikasi HP, `launcher.ini`, `config.json`, `session_stats.json`, `launch.log`, dan `shad_log.txt` ke 1 file `.zip` untuk laporan bug, plus cek dan unduh update `.nixport.zip` dari GitHub Releases.
+- **Playtime Tracker, Auto-Backup Save & 50 Trophy Bilingual:** Mencatat total jam main & status sesi terakhir, membuat auto-backup save sebelum main (simpan 5 terakhir), mendukung impor save `.zip` aman (anti Zip Slip), serta katalog 50 trophy PS4 resmi.
 - **Touch Virtual Gamepad Siap Pakai (`virtualkeys.json`):** Layout landscape khusus pertarungan Kamen Rider (`L1/L2`, `R1/R2`, diamond `△○×□`, Dual Analog, D-Pad, Map, Options) otomatis terpasang saat import paket ke `nixport`.
-- **Savegame Manager & 50 Trophy Bilingual:** Backup/restore save `.zip` portabel di `home/kr_moh/` serta katalog 50 trophy PS4 resmi (Bahasa Indonesia & English).
 
 ---
 

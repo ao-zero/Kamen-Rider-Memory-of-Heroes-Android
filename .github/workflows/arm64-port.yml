@@ -43,8 +43,12 @@ jobs:
         run: |
           python3 -m py_compile \
             scripts/android_config.py \
+            scripts/android_diagnostics.py \
+            scripts/android_i18n.py \
+            scripts/android_updater.py \
             scripts/indo_patcher.py \
             scripts/save_manager.py \
+            scripts/session_tracker.py \
             scripts/sfo_parser.py \
             scripts/trophy_manager.py \
             launcher/kr_android_launcher.py \

@@ -31,8 +31,12 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 import android_config as acfg  # noqa: E402
+import android_diagnostics as adiag  # noqa: E402
+import android_i18n as ai18n  # noqa: E402
+import android_updater as aupd  # noqa: E402
 import indo_patcher  # noqa: E402
 import save_manager  # noqa: E402
+import session_tracker  # noqa: E402
 import sfo_parser  # noqa: E402
 import trophy_manager  # noqa: E402
 
@@ -104,184 +108,11 @@ THEMES = {
     },
 }
 
-STRINGS = {
-    "id": {
-        "nav_play": "Overview",
-        "nav_patch": "Patch Indo",
-        "nav_saves": "Saves",
-        "nav_trophies": "Trophies",
-        "nav_settings": "Pengaturan",
-        "hero_crumb": "CUSA17374 · Android ARM64 Edition v1.0.0",
-        "hero_sub": "Bandai Namco · v{ver} · Port oleh AO Zero & Bakka Sub",
-        "btn_play": "Play",
-        "btn_running": "Berjalan...",
-        "patch_off": "Patch Indo: Off",
-        "patch_on": "Patch Indo: Aktif",
-        "badge_ready": "Game siap",
-        "badge_missing": "Pilih folder game",
-        "runs_with": "Runs with",
-        "card_game": "GAME",
-        "card_engine": "SHADER CACHE & ENGINE",
-        "card_log": "ENGINE LOG",
-        "card_overrides": "QUICK OVERRIDES",
-        "autosaved": "Tersimpan otomatis",
-        "lbl_version": "Versi",
-        "lbl_subtitle": "Subtitle",
-        "lbl_lead": "Port Lead",
-        "lbl_folder": "Folder",
-        "lbl_state": "Status",
-        "lbl_render": "Render",
-        "lbl_controller": "Kontrol",
-        "lbl_saves": "Save Data",
-        "lbl_resolution": "Resolusi",
-        "lbl_fps": "Frame rate",
-        "lbl_fps_hud": "FPS overlay",
-        "lbl_sub_id": "Subtitle ID",
-        "btn_verify": "Verifikasi",
-        "btn_switch": "Ubah",
-        "btn_change": "Pilih",
-        "btn_clear_cache": "Hapus cache",
-        "btn_clear": "Bersihkan",
-        "btn_backup": "Backup",
-        "not_set": "Belum dipilih",
-        "sub_orig": "Original (EN/JP)",
-        "sub_indo": "Bahasa Indonesia (Bakka Sub)",
-        "ctrl_touch": "Virtual Touch Gamepad + BT",
-        "ctrl_desktop": "Gamepad / Keyboard",
-        "patch_title": "Patch Bahasa Indonesia (Bakka Sub)",
-        "patch_sub": "Terjemahan penuh menu, tutorial, nama karakter, dan dialog cerita bergaya fansub Bakka Sub.",
-        "patch_note": "Backup file original otomatis disimpan di storage persisten (home/kr_moh/bin/user/vanilla_backup/) dan bisa dikembalikan kapan saja.",
-        "btn_apply_indo": "Aktifkan Patch Bahasa Indonesia",
-        "btn_restore_orig": "Kembalikan ke Original (EN/JP)",
-        "patch_busy": "Memproses patch...",
-        "saves_title": "Manajer Save Game (CUSA17374)",
-        "saves_sub": "Kelola slot penyimpanan portabel dan arsip cadangan .zip di storage persisten nixport.",
-        "btn_backup_now": "Buat Backup Save (.zip)",
-        "btn_restore_sel": "Pulihkan Backup Terpilih",
-        "no_saves": "Belum ada data save CUSA17374 yang terdeteksi.",
-        "no_backups": "Belum ada arsip backup save.",
-        "trophies_title": "Katalog Trophy PS4 (50 Trophy)",
-        "trophies_sub": "Daftar resmi 50 trophy Kamen Rider: Memory of Heroes (1 Platinum, 1 Gold, 10 Silver, 38 Bronze).",
-        "filter_all": "Semua",
-        "filter_unlocked": "Terbuka",
-        "filter_locked": "Terkunci",
-        "settings_title": "Pengaturan Mobile & Info Port",
-        "settings_sub": "Konfigurasi grafis Vulkan 1.3 (Turnip), input sentuh, tema tampilan, dan informasi storage.",
-        "sec_graphics": "GRAFIS & PERFORMA MOBILE",
-        "sec_system": "SISTEM, TEMA & STORAGE",
-        "sec_credits": "KREDIT & ATRIBUSI",
-        "lbl_fsr": "FSR Upscaling + RCAS",
-        "lbl_async": "Async Shader Compilation",
-        "lbl_vsync": "Mode Present / VSync",
-        "lbl_backend": "Video Backend (SDL)",
-        "lbl_volume": "Volume Audio",
-        "lbl_deadzone": "Deadzone Analog",
-        "lbl_theme": "Tema Tampilan",
-        "lbl_lang": "Bahasa UI",
-        "theme_dark": "Dark",
-        "theme_light": "Light",
-        "err_no_eboot_title": "eboot.bin Tidak Ditemukan",
-        "err_no_eboot_msg": "Folder yang dipilih tidak berisi eboot.bin.\nPilih folder dump CUSA17374 Anda.",
-        "err_no_runtime_title": "Runtime ARM64 Belum Terpasang",
-        "err_no_runtime_msg": (
-            "Binary runtime ARM64 (bin/kr_core) belum ditemukan di paket ini.\n\n"
-            "Konfigurasi config.json dan input_config sudah disinkronkan di:\n{data_dir}\n\n"
-            "Build paket lengkap dengan GitHub Actions CI (Fase 4: FEXCore + shadPS4 ARM64) "
-            "untuk menjalankan game langsung di perangkat Android."
-        ),
-    },
-    "en": {
-        "nav_play": "Overview",
-        "nav_patch": "Patch Indo",
-        "nav_saves": "Saves",
-        "nav_trophies": "Trophies",
-        "nav_settings": "Settings",
-        "hero_crumb": "CUSA17374 · Android ARM64 Edition v1.0.0",
-        "hero_sub": "Bandai Namco · v{ver} · Port by AO Zero & Bakka Sub",
-        "btn_play": "Play",
-        "btn_running": "Running...",
-        "patch_off": "Patch Indo: Off",
-        "patch_on": "Patch Indo: On",
-        "badge_ready": "Game ready",
-        "badge_missing": "Select game folder",
-        "runs_with": "Runs with",
-        "card_game": "GAME",
-        "card_engine": "SHADER CACHE & ENGINE",
-        "card_log": "ENGINE LOG",
-        "card_overrides": "QUICK OVERRIDES",
-        "autosaved": "Auto-saved",
-        "lbl_version": "Version",
-        "lbl_subtitle": "Subtitle",
-        "lbl_lead": "Port Lead",
-        "lbl_folder": "Folder",
-        "lbl_state": "State",
-        "lbl_render": "Render",
-        "lbl_controller": "Controller",
-        "lbl_saves": "Saves",
-        "lbl_resolution": "Resolution",
-        "lbl_fps": "Frame rate",
-        "lbl_fps_hud": "FPS overlay",
-        "lbl_sub_id": "Subtitle ID",
-        "btn_verify": "Verify",
-        "btn_switch": "Switch",
-        "btn_change": "Change",
-        "btn_clear_cache": "Clear cache",
-        "btn_clear": "Clear",
-        "btn_backup": "Backup",
-        "not_set": "Not selected",
-        "sub_orig": "Original (EN/JP)",
-        "sub_indo": "Indonesian (Bakka Sub)",
-        "ctrl_touch": "Virtual Touch Gamepad + BT",
-        "ctrl_desktop": "Gamepad / Keyboard",
-        "patch_title": "Indonesian Subtitle Patch (Bakka Sub)",
-        "patch_sub": "Full translation of menus, tutorials, character names, and story dialogue in Bakka Sub fansub style.",
-        "patch_note": "Original file backup is stored persistently in home/kr_moh/bin/user/vanilla_backup/ and can be restored anytime.",
-        "btn_apply_indo": "Enable Indonesian Patch",
-        "btn_restore_orig": "Restore Original (EN/JP)",
-        "patch_busy": "Applying patch...",
-        "saves_title": "Savegame Manager (CUSA17374)",
-        "saves_sub": "Manage portable save slots and timestamped .zip backups inside persistent nixport storage.",
-        "btn_backup_now": "Create Save Backup (.zip)",
-        "btn_restore_sel": "Restore Selected Backup",
-        "no_saves": "No CUSA17374 save data detected yet.",
-        "no_backups": "No save backup archives yet.",
-        "trophies_title": "PS4 Trophy Catalog (50 Trophies)",
-        "trophies_sub": "Official 50-trophy list for Kamen Rider: Memory of Heroes (1 Platinum, 1 Gold, 10 Silver, 38 Bronze).",
-        "filter_all": "All",
-        "filter_unlocked": "Unlocked",
-        "filter_locked": "Locked",
-        "settings_title": "Mobile Settings & Port Info",
-        "settings_sub": "Vulkan 1.3 (Turnip) graphics, touch input protection, theme appearance, and storage paths.",
-        "sec_graphics": "MOBILE GRAPHICS & PERFORMANCE",
-        "sec_system": "SYSTEM, THEME & STORAGE",
-        "sec_credits": "CREDITS & ATTRIBUTION",
-        "lbl_fsr": "FSR Upscaling + RCAS",
-        "lbl_async": "Async Shader Compilation",
-        "lbl_vsync": "Present / VSync Mode",
-        "lbl_backend": "Video Backend (SDL)",
-        "lbl_volume": "Audio Volume",
-        "lbl_deadzone": "Analog Deadzone",
-        "lbl_theme": "Appearance Theme",
-        "lbl_lang": "UI Language",
-        "theme_dark": "Dark",
-        "theme_light": "Light",
-        "err_no_eboot_title": "eboot.bin Not Found",
-        "err_no_eboot_msg": "The selected folder does not contain eboot.bin.\nPlease choose your dumped CUSA17374 directory.",
-        "err_no_runtime_title": "ARM64 Runtime Not Bundled",
-        "err_no_runtime_msg": (
-            "The ARM64 runtime binary (bin/kr_core) is not present in this package yet.\n\n"
-            "Your config.json and input_config have been synced to:\n{data_dir}\n\n"
-            "Build the full package via GitHub Actions CI (Phase 4: FEXCore + shadPS4 ARM64) "
-            "to launch directly on an Android device."
-        ),
-    },
-}
-
 
 class KRAndroidLauncher:
     """Clean UI v1.0.0 (XSEmu-inspired) launcher for Android nixport & desktop testing."""
 
-    def __init__(self, root: tk.Tk) -> None:
+    def __init__(self, root: tk.Tk, skip_network: bool = False) -> None:
         self.root = root
         self.app_dir = acfg.get_app_dir()
         self.data_dir = acfg.get_data_dir()
@@ -294,16 +125,20 @@ class KRAndroidLauncher:
 
         self.cfg = acfg.load_android_config(self.data_dir, self.app_dir)
         acfg.sync_android_engine_config(self.data_dir, self.cfg)
+        self.hw_info = adiag.detect_device_hardware(self.data_dir)
 
         self.active_tab = "play"
         self.trophy_filter = "all"
         self.patch_busy = False
         self.game_running = False
+        self.update_busy = False
+        self.update_info: dict | None = None
         self.selected_backup: str | None = None
+
         self.log_lines: list[str] = [
             f"[INIT] Kamen Rider: Memory of Heroes Android Port v{VERSION} Ready.",
             f"[STORAGE] Writable DATA_DIR: {self.data_dir}",
-            f"[VULKAN] Async shader pipeline + mobile pool (1024MB DMEM / 512MB FMEM) synced.",
+            f"[DEVICE] {self.hw_info['device']} | {self.hw_info['soc']} | {self.hw_info['ram_gb']} GB RAM",
         ]
         if self.on_device:
             self.log_lines.append("[NIXPORT] FEXDROID_PRESENT active: fullscreen touch mode & mouse_to_joystick=none.")
@@ -314,6 +149,9 @@ class KRAndroidLauncher:
 
         self._configure_window()
         self._build_ui()
+
+        if not skip_network and self.cfg.get("check_updates_startup", "true") == "true":
+            self._check_updates_async(silent=True)
 
     # ------------------------------------------------------------------ Helpers
     def _compute_scale(self) -> float:
@@ -376,10 +214,7 @@ class KRAndroidLauncher:
         return THEMES.get(self.cfg.get("theme", "dark"), THEMES["dark"])
 
     def _tr(self, key: str, **kwargs) -> str:
-        lang = self.cfg.get("language", "id")
-        table = STRINGS.get(lang, STRINGS["id"])
-        text = table.get(key, STRINGS["en"].get(key, key))
-        return text.format(**kwargs) if kwargs else text
+        return ai18n.tr(self.cfg.get("language", "id"), key, **kwargs)
 
     def _load_icons(self) -> None:
         icon_path = self.assets_dir / "game_icon_rounded.png"
@@ -456,8 +291,6 @@ class KRAndroidLauncher:
         shell.pack(fill="both", expand=True)
 
         self._build_sidebar(shell)
-
-        # Hairline vertical divider
         tk.Frame(shell, bg=t["border"], width=1).pack(side="left", fill="y")
 
         self.viewport = tk.Frame(shell, bg=t["bg_canvas"])
@@ -471,7 +304,6 @@ class KRAndroidLauncher:
         sb.pack(side="left", fill="y")
         sb.pack_propagate(False)
 
-        # Brand header
         brand = tk.Frame(sb, bg=t["bg_sidebar"])
         brand.pack(fill="x", padx=self._s(14), pady=(self._s(16), self._s(18)))
         if self._icon_small is not None:
@@ -485,7 +317,6 @@ class KRAndroidLauncher:
             anchor="w",
         ).pack(side="left", fill="x", expand=True)
 
-        # Navigation tabs
         patch_st = self._patch_status()
         nav_items = [
             ("play", self._tr("nav_play"), None),
@@ -506,7 +337,6 @@ class KRAndroidLauncher:
             row = tk.Frame(nav_wrap, bg=row_bg, cursor="hand2")
             row.pack(fill="x", pady=self._s(2))
 
-            # Subtle left accent indicator when active
             ind = tk.Frame(row, bg=t["blue"] if is_active else row_bg, width=3)
             ind.pack(side="left", fill="y")
 
@@ -541,10 +371,8 @@ class KRAndroidLauncher:
             for w in widgets:
                 w.bind("<Button-1>", lambda _e, tid=tab_id: self._switch_tab(tid))
 
-        # Spacer
         tk.Frame(sb, bg=t["bg_sidebar"]).pack(fill="both", expand=True)
 
-        # Sidebar footer pills (FPS, Theme Dark/Light, Language ID/EN)
         tk.Frame(sb, bg=t["border"], height=1).pack(fill="x", padx=self._s(12), pady=(0, self._s(10)))
         foot = tk.Frame(sb, bg=t["bg_sidebar"])
         foot.pack(fill="x", padx=self._s(10), pady=(0, self._s(12)))
@@ -555,8 +383,8 @@ class KRAndroidLauncher:
         theme_txt = self._tr("theme_dark") if self.cfg["theme"] == "dark" else self._tr("theme_light")
         self._make_pill(foot, theme_txt, cmd=self._toggle_theme).pack(side="left", padx=(0, self._s(4)))
 
-        lang_txt = self.cfg["language"].upper()
-        self._make_pill(foot, lang_txt, cmd=self._toggle_language).pack(side="left")
+        lang_code = ai18n.normalize_lang(self.cfg.get("language", "id"))
+        self._make_pill(foot, ai18n.LANG_SHORT[lang_code], cmd=self._cycle_language).pack(side="left")
 
     def _make_pill(self, parent, text: str, fg=None, bg=None, cmd=None) -> tk.Label:
         t = self._t()
@@ -651,7 +479,7 @@ class KRAndroidLauncher:
                 bg=t["bg_seg_active"] if active else t["bg_seg_track"],
                 fg=t["text_primary"] if active else t["text_secondary"],
                 font=self._font(8, bold=active),
-                padx=self._s(10),
+                padx=self._s(9),
                 pady=self._s(4),
                 cursor="hand2",
             )
@@ -685,6 +513,8 @@ class KRAndroidLauncher:
         title_id, app_ver = self._game_meta()
         gd = self._game_dir()
         patch_st = self._patch_status()
+        stats = session_tracker.get_formatted_stats(self.data_dir)
+        cache_st = adiag.get_shader_cache_stats(self.data_dir)
 
         wrap = tk.Frame(self.viewport, bg=t["bg_canvas"])
         wrap.pack(fill="both", expand=True, padx=self._s(18), pady=self._s(14))
@@ -693,14 +523,24 @@ class KRAndroidLauncher:
         hero = self._make_card(wrap)
         hero.pack(fill="x", pady=(0, self._s(10)))
 
+        top_crumb = tk.Frame(hero, bg=t["bg_card"])
+        top_crumb.pack(fill="x", pady=(0, self._s(6)))
         tk.Label(
-            hero,
+            top_crumb,
             text=self._tr("hero_crumb"),
             bg=t["bg_card"],
             fg=t["text_muted"],
             font=self._font(8, bold=True),
             anchor="w",
-        ).pack(fill="x", pady=(0, self._s(8)))
+        ).pack(side="left")
+        tk.Label(
+            top_crumb,
+            text=f"{stats['playtime_text']} · {stats['last_played_text']}",
+            bg=t["bg_card"],
+            fg=t["text_secondary"],
+            font=self._font(8, mono=True),
+            anchor="e",
+        ).pack(side="right")
 
         hero_body = tk.Frame(hero, bg=t["bg_card"])
         hero_body.pack(fill="x")
@@ -734,7 +574,7 @@ class KRAndroidLauncher:
         bar.pack(fill="x", pady=(0, self._s(10)))
 
         play_lbl = self._tr("btn_running") if self.game_running else self._tr("btn_play")
-        self._make_button(bar, play_lbl, self._on_play, kind="primary", padx=20, pady=7).pack(
+        self._make_button(bar, play_lbl, self._on_play, kind="primary", padx=18, pady=7).pack(
             side="left", padx=(0, self._s(8))
         )
 
@@ -758,6 +598,16 @@ class KRAndroidLauncher:
         else:
             self._make_pill(bar, self._tr("badge_missing"), fg=t["amber_text"], bg=t["amber_bg"]).pack(side="left")
 
+        if self.update_info and not self.update_info.get("up_to_date", True):
+            upd_tag = self.update_info.get("latest", "")
+            self._make_pill(
+                bar,
+                f"Update {upd_tag}",
+                fg=t["blue_text"],
+                bg=t["blue_soft"],
+                cmd=lambda: self._switch_tab("settings"),
+            ).pack(side="left", padx=(self._s(6), 0))
+
         right_bar = tk.Frame(bar, bg=t["bg_canvas"])
         right_bar.pack(side="right")
         tk.Label(
@@ -767,7 +617,7 @@ class KRAndroidLauncher:
             fg=t["text_muted"],
             font=self._font(8),
         ).pack(side="left", padx=(0, self._s(6)))
-        self._make_pill(right_bar, "FEXCore + shadPS4 Vulkan 1.3", fg=t["text_primary"]).pack(side="left")
+        self._make_pill(right_bar, "FEXCore + shadPS4", fg=t["text_primary"]).pack(side="left")
 
         # 2x2 Structured Spec Grid
         grid = tk.Frame(wrap, bg=t["bg_canvas"])
@@ -793,8 +643,8 @@ class KRAndroidLauncher:
         )
         self._spec_row(c1, self._tr("lbl_lead"), "AO Zero & Bakka Sub")
         gd_display = str(gd) if gd else self._tr("not_set")
-        if len(gd_display) > 32:
-            gd_display = "..." + gd_display[-29:]
+        if len(gd_display) > 28:
+            gd_display = "..." + gd_display[-25:]
         self._spec_row(
             c1,
             self._tr("lbl_folder"),
@@ -808,17 +658,14 @@ class KRAndroidLauncher:
         c2 = self._make_card(grid)
         c2.grid(row=0, column=1, sticky="nsew", padx=(self._s(6), 0), pady=(0, self._s(6)))
         self._card_header(c2, self._tr("card_engine"), self._tr("btn_clear_cache"), self._on_clear_cache, danger=True)
-        runtime_bin = acfg.find_runtime_binary(self.app_dir, self.data_dir)
-        state_txt = "Ready · Async Pipelines" if runtime_bin else "Config Synced · Async Pipelines"
-        self._spec_row(c2, self._tr("lbl_state"), state_txt, value_fg=t["green_text"])
+        self._spec_row(c2, self._tr("lbl_shaders"), cache_st["summary"], value_fg=t["green_text"], mono=True)
         self._spec_row(c2, self._tr("lbl_render"), acfg.render_summary(self.cfg), mono=True)
         ctrl_txt = self._tr("ctrl_touch") if self.on_device else self._tr("ctrl_desktop")
         self._spec_row(c2, self._tr("lbl_controller"), ctrl_txt)
-        slots_cnt = len(save_manager.get_save_slots(self.data_dir))
         self._spec_row(
             c2,
-            self._tr("lbl_saves"),
-            f"{slots_cnt} slot(s) · home/kr_moh",
+            self._tr("lbl_last_run"),
+            stats["last_result"],
             action_text=self._tr("btn_backup"),
             action_cmd=self._on_backup_saves,
         )
@@ -946,7 +793,7 @@ class KRAndroidLauncher:
             bg=t["bg_card"],
             fg=t["text_secondary"],
             font=self._font(9),
-            width=self._s(12),
+            width=self._s(13),
             anchor="w",
         ).pack(side="left")
         self._make_segmented(row, options, current, on_select).pack(side="right")
@@ -1049,19 +896,38 @@ class KRAndroidLauncher:
     def _build_tab_saves(self) -> None:
         t = self._t()
         wrap = tk.Frame(self.viewport, bg=t["bg_canvas"])
-        wrap.pack(fill="both", expand=True, padx=self._s(18), pady=self._s(16))
+        wrap.pack(fill="both", expand=True, padx=self._s(18), pady=self._s(14))
 
         head = tk.Frame(wrap, bg=t["bg_canvas"])
-        head.pack(fill="x", pady=(0, self._s(12)))
+        head.pack(fill="x", pady=(0, self._s(10)))
         left = tk.Frame(head, bg=t["bg_canvas"])
         left.pack(side="left", fill="x", expand=True)
         tk.Label(left, text=self._tr("saves_title"), bg=t["bg_canvas"], fg=t["text_primary"], font=self._font(14, bold=True), anchor="w").pack(fill="x")
         tk.Label(left, text=self._tr("saves_sub"), bg=t["bg_canvas"], fg=t["text_secondary"], font=self._font(9), anchor="w").pack(fill="x")
-        self._make_button(head, self._tr("btn_backup_now"), self._on_backup_saves, kind="primary", padx=14, pady=7).pack(side="right")
+
+        actions = tk.Frame(head, bg=t["bg_canvas"])
+        actions.pack(side="right")
+        self._make_button(actions, self._tr("btn_import_save"), self._on_import_save_zip, kind="secondary", padx=10, pady=6).pack(
+            side="left", padx=(0, self._s(6))
+        )
+        self._make_button(actions, self._tr("btn_backup_now"), self._on_backup_saves, kind="primary", padx=12, pady=6).pack(
+            side="left"
+        )
+
+        # Auto-backup toggle strip
+        c_opt = self._make_card(wrap)
+        c_opt.pack(fill="x", pady=(0, self._s(8)))
+        self._override_row(
+            c_opt,
+            self._tr("lbl_auto_backup"),
+            [("true", "On"), ("false", "Off")],
+            self.cfg.get("auto_backup_saves", "true"),
+            lambda v: self._set_quick_setting("auto_backup_saves", v),
+        )
 
         # Active slots card
         c_slots = self._make_card(wrap)
-        c_slots.pack(fill="x", pady=(0, self._s(10)))
+        c_slots.pack(fill="x", pady=(0, self._s(8)))
         self._card_header(c_slots, "ACTIVE SAVE SLOTS")
         slots = save_manager.get_save_slots(self.data_dir)
         if not slots:
@@ -1102,7 +968,7 @@ class KRAndroidLauncher:
     # ------------------------------------------------------------------ TAB 4: TROPHIES
     def _build_tab_trophies(self) -> None:
         t = self._t()
-        lang = self.cfg.get("language", "id")
+        lang = ai18n.normalize_lang(self.cfg.get("language", "id"))
         all_tr = trophy_manager.load_trophies(self.data_dir)
         unlocked_cnt = sum(1 for item in all_tr if item["unlocked"])
 
@@ -1130,7 +996,6 @@ class KRAndroidLauncher:
             or (self.trophy_filter == "locked" and not item["unlocked"])
         ]
 
-        # Scrollable canvas list (full-width inner frame + global mousewheel scroll)
         outer = self._make_card(wrap)
         outer.pack(fill="both", expand=True)
         _canvas, inner = self._make_scroll_area(outer, t["bg_card"])
@@ -1160,6 +1025,7 @@ class KRAndroidLauncher:
     # ------------------------------------------------------------------ TAB 5: SETTINGS
     def _build_tab_settings(self) -> None:
         t = self._t()
+        cache_st = adiag.get_shader_cache_stats(self.data_dir)
         scroll_host = tk.Frame(self.viewport, bg=t["bg_canvas"])
         scroll_host.pack(fill="both", expand=True)
         _canvas, sc_inner = self._make_scroll_area(scroll_host, t["bg_canvas"])
@@ -1170,6 +1036,33 @@ class KRAndroidLauncher:
         tk.Label(wrap, text=self._tr("settings_title"), bg=t["bg_canvas"], fg=t["text_primary"], font=self._font(14, bold=True), anchor="w").pack(fill="x")
         tk.Label(wrap, text=self._tr("settings_sub"), bg=t["bg_canvas"], fg=t["text_secondary"], font=self._font(9), anchor="w").pack(fill="x", pady=(self._s(2), self._s(12)))
 
+        # Card 1: 1-Click Mobile Presets
+        c_pre = self._make_card(wrap)
+        c_pre.pack(fill="x", pady=(0, self._s(10)))
+        self._card_header(c_pre, self._tr("sec_presets"))
+        pre_row = tk.Frame(c_pre, bg=t["bg_card"])
+        pre_row.pack(fill="x")
+        self._make_button(pre_row, self._tr("btn_preset_auto"), self._on_apply_auto_preset, kind="primary", padx=12, pady=6).pack(
+            side="left", padx=(0, self._s(6))
+        )
+        self._make_button(
+            pre_row,
+            self._tr("btn_preset_540"),
+            lambda: self._apply_preset("540p (960x540)", "30 FPS (Locked)", "true"),
+            kind="secondary",
+            padx=10,
+            pady=6,
+        ).pack(side="left", padx=(0, self._s(6)))
+        self._make_button(
+            pre_row,
+            self._tr("btn_preset_720"),
+            lambda: self._apply_preset("720p (1280x720)", "60 FPS (Native Unlock)", "true"),
+            kind="secondary",
+            padx=10,
+            pady=6,
+        ).pack(side="left")
+
+        # Card 2: Graphics, Audio & Controls
         c_gfx = self._make_card(wrap)
         c_gfx.pack(fill="x", pady=(0, self._s(10)))
         self._card_header(c_gfx, self._tr("sec_graphics"))
@@ -1216,6 +1109,7 @@ class KRAndroidLauncher:
             lambda v: self._set_quick_setting("deadzone", v),
         )
 
+        # Card 3: System, Theme & 5-Language Switcher
         c_sys = self._make_card(wrap)
         c_sys.pack(fill="x", pady=(0, self._s(10)))
         self._card_header(c_sys, self._tr("sec_system"))
@@ -1229,13 +1123,65 @@ class KRAndroidLauncher:
         self._override_row(
             c_sys,
             self._tr("lbl_lang"),
-            [("id", "Bahasa Indonesia"), ("en", "English")],
-            self.cfg["language"],
+            [(code, ai18n.LANG_SHORT[code]) for code in ai18n.SUPPORTED_LANGS],
+            ai18n.normalize_lang(self.cfg["language"]),
             lambda v: self._set_quick_setting("language", v),
         )
+        self._override_row(
+            c_sys,
+            self._tr("lbl_update_startup"),
+            [("true", "On"), ("false", "Off")],
+            self.cfg.get("check_updates_startup", "true"),
+            lambda v: self._set_quick_setting("check_updates_startup", v),
+        )
         self._spec_row(c_sys, "DATA_DIR", str(self.data_dir), mono=True)
-        self._spec_row(c_sys, "APP_DIR", str(self.app_dir), mono=True)
+        sys_btns = tk.Frame(c_sys, bg=t["bg_card"])
+        sys_btns.pack(fill="x", pady=(self._s(8), 0))
+        self._make_button(sys_btns, self._tr("btn_clean_temp"), self._on_clean_temp, kind="secondary", padx=10, pady=5).pack(
+            side="left", padx=(0, self._s(6))
+        )
+        self._make_button(sys_btns, self._tr("btn_reset_all"), self._on_reset_defaults, kind="danger", padx=10, pady=5).pack(
+            side="left"
+        )
 
+        # Card 4: Device Specs, Diagnostics & Update Checker
+        c_diag = self._make_card(wrap)
+        c_diag.pack(fill="x", pady=(0, self._s(10)))
+        self._card_header(c_diag, self._tr("sec_specs"), self._tr("btn_copy_specs"), self._on_copy_specs)
+        self._spec_row(c_diag, "Device", f"{self.hw_info['device']} ({self.hw_info['arch']})")
+        self._spec_row(c_diag, "SoC / CPU", self.hw_info["soc"])
+        self._spec_row(c_diag, "RAM / Disk", f"{self.hw_info['ram_gb']} GB RAM · {self.hw_info['disk_free']}", mono=True)
+        self._spec_row(c_diag, "Vulkan ICD", self.hw_info["vulkan_summary"])
+        self._spec_row(c_diag, "Shader Cache", cache_st["summary"], mono=True)
+        self._spec_row(c_diag, "Recommended", self.hw_info["recommended"], value_fg=t["green_text"])
+        if self.update_info:
+            upd_col = t["blue_text"] if not self.update_info.get("up_to_date", True) else t["text_secondary"]
+            self._spec_row(c_diag, "Update", self.update_info.get("message", ""), value_fg=upd_col)
+
+        diag_btns = tk.Frame(c_diag, bg=t["bg_card"])
+        diag_btns.pack(fill="x", pady=(self._s(8), 0))
+        self._make_button(diag_btns, self._tr("btn_export_diag"), self._on_export_diagnostic, kind="primary", padx=12, pady=6).pack(
+            side="left", padx=(0, self._s(6))
+        )
+        self._make_button(
+            diag_btns,
+            self._tr("btn_check_update"),
+            lambda: self._check_updates_async(silent=False),
+            kind="secondary",
+            padx=10,
+            pady=6,
+        ).pack(side="left", padx=(0, self._s(6)))
+        if self.update_info and self.update_info.get("download_url") and not self.update_info.get("up_to_date", True):
+            self._make_button(
+                diag_btns,
+                self._tr("btn_download_update"),
+                self._on_download_update,
+                kind="success",
+                padx=10,
+                pady=6,
+            ).pack(side="left")
+
+        # Card 5: Credits
         c_cred = self._make_card(wrap)
         c_cred.pack(fill="x")
         self._card_header(c_cred, self._tr("sec_credits"))
@@ -1248,12 +1194,21 @@ class KRAndroidLauncher:
         self._append_log(f"[CONFIG] {key} = {value} (synced to config.json)")
         self._build_ui()
 
+    def _apply_preset(self, resolution: str, fps: str, fsr: str) -> None:
+        self._save_and_sync(resolution=resolution, fps=fps, fsr_enabled=fsr, async_shaders="true")
+        self._append_log(f"[PRESET] Applied {resolution} / {fps} / FSR={fsr}")
+        self._build_ui()
+
+    def _on_apply_auto_preset(self) -> None:
+        p = self.hw_info.get("recommended_preset") or adiag.recommend_mobile_preset(self.hw_info)
+        self._apply_preset(p["resolution"], p["fps"], p["fsr_enabled"])
+
     def _toggle_theme(self) -> None:
         nxt = "light" if self.cfg.get("theme", "dark") == "dark" else "dark"
         self._set_quick_setting("theme", nxt)
 
-    def _toggle_language(self) -> None:
-        nxt = "en" if self.cfg.get("language", "id") == "id" else "id"
+    def _cycle_language(self) -> None:
+        nxt = ai18n.next_lang(self.cfg.get("language", "id"))
         self._set_quick_setting("language", nxt)
 
     def _set_trophy_filter(self, val: str) -> None:
@@ -1295,12 +1250,125 @@ class KRAndroidLauncher:
     def _on_clear_cache(self) -> None:
         res = acfg.clear_shader_cache(self.data_dir)
         self._append_log(f"[CACHE] Cleared {res['removed_files']} file(s), freed {res['freed_mb']} MB.")
+        self._build_ui()
+
+    def _on_clean_temp(self) -> None:
+        res = acfg.clean_temp_files(self.data_dir)
+        self._append_log(f"[TEMP] Removed {res['removed']} temporary file(s).")
+        messagebox.showinfo("Clean Temp", f"Removed {res['removed']} temporary file(s).")
+
+    def _on_reset_defaults(self) -> None:
+        if not messagebox.askyesno("Reset Defaults", "Reset all launcher graphics, audio, and UI settings to mobile defaults?"):
+            return
+        self.cfg = acfg.reset_to_defaults(self.data_dir, keep_game_dir=True)
+        self._append_log("[CONFIG] Restored factory mobile defaults.")
+        self._build_ui()
+
+    def _on_copy_specs(self) -> None:
+        cache_st = adiag.get_shader_cache_stats(self.data_dir)
+        txt = adiag.format_specs_clipboard(self.hw_info, VERSION, cache_st)
+        try:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(txt)
+            self._append_log("[SPECS] Copied device specs to clipboard.")
+        except Exception as exc:
+            self._append_log(f"[SPECS] Clipboard unavailable: {exc}")
+
+    def _on_export_diagnostic(self) -> None:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_dir = adiag.default_diagnostic_dir(self.data_dir)
+        default_name = f"KR_Android_Diagnostic_{ts}.zip"
+        if self.on_device:
+            dest = default_dir / default_name
+        else:
+            chosen = filedialog.asksaveasfilename(
+                title="Export Diagnostic ZIP",
+                initialdir=str(default_dir),
+                initialfile=default_name,
+                defaultextension=".zip",
+                filetypes=[("Diagnostic Archive (*.zip)", "*.zip")],
+            )
+            if not chosen:
+                return
+            dest = Path(chosen)
+
+        res = adiag.export_diagnostic_bundle(self.data_dir, dest, self.hw_info, VERSION, self._game_dir())
+        self._append_log(f"[DIAG] {res['message']}")
+        if res["success"]:
+            messagebox.showinfo("Diagnostic ZIP", f"{res['message']}\n\nSaved to:\n{res['path']}")
+        else:
+            messagebox.showerror("Diagnostic ZIP", res["message"])
+
+    def _check_updates_async(self, silent: bool = False) -> None:
+        if self.update_busy:
+            return
+        self.update_busy = True
+
+        def worker() -> None:
+            res = aupd.check_for_updates(VERSION, include_prereleases=True)
+
+            def _done() -> None:
+                self.update_busy = False
+                self.update_info = res
+                self._append_log(f"[UPDATE] {res['message']}")
+                if not silent:
+                    messagebox.showinfo("Update Check", res["message"])
+                if not res.get("up_to_date", True) or self.active_tab == "settings":
+                    self._build_ui()
+
+            self.root.after(0, _done)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_download_update(self) -> None:
+        if self.update_busy or not self.update_info or not self.update_info.get("download_url"):
+            return
+        self.update_busy = True
+        url = self.update_info["download_url"]
+        name = self.update_info.get("asset_name") or "KamenRiderMoH.nixport.zip"
+        dest_dir = aupd.default_download_dir(self.data_dir)
+        self._append_log(f"[UPDATE] Downloading {name} to {dest_dir}...")
+
+        def worker() -> None:
+            def prog(_pct: int, text: str) -> None:
+                self.root.after(0, lambda m=text: self._append_log(f"[UPDATE] {m}"))
+
+            res = aupd.download_port_zip(url, name, dest_dir, progress_cb=prog)
+
+            def _done() -> None:
+                self.update_busy = False
+                self._append_log(f"[UPDATE] {res['message']}")
+                if res["success"]:
+                    messagebox.showinfo("Update Downloaded", res["message"])
+                else:
+                    messagebox.showerror("Update Failed", res["message"])
+
+            self.root.after(0, _done)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _on_backup_saves(self) -> None:
         res = save_manager.backup_saves(self.data_dir)
         self._append_log(f"[SAVE] {res['message']}")
         if self.active_tab == "saves":
             self._render_active_tab()
+
+    def _on_import_save_zip(self) -> None:
+        initial = "/storage/emulated/0/Download" if os.path.isdir("/storage/emulated/0/Download") else str(self.data_dir)
+        chosen = filedialog.askopenfilename(
+            title="Import Save Archive (.zip)",
+            initialdir=initial,
+            filetypes=[("Save Archive (*.zip)", "*.zip")],
+        )
+        if not chosen:
+            return
+        res = save_manager.import_save_zip(self.data_dir, Path(chosen))
+        self._append_log(f"[SAVE] {res['message']}")
+        if res["success"]:
+            messagebox.showinfo("Import Save", res["message"])
+        else:
+            messagebox.showerror("Import Save", res["message"])
+        self._render_active_tab()
 
     def _on_select_backup(self, listbox: tk.Listbox) -> None:
         sel = listbox.curselection()
@@ -1368,6 +1436,11 @@ class KRAndroidLauncher:
             return
 
         acfg.sync_android_engine_config(self.data_dir, self.cfg)
+        if self.cfg.get("auto_backup_saves", "true") == "true":
+            ab = save_manager.auto_backup_saves(self.data_dir, keep=5)
+            if ab.get("success"):
+                self._append_log(f"[SAVE] {ab['message']}")
+
         runtime_bin = acfg.find_runtime_binary(self.app_dir, self.data_dir)
         if runtime_bin is None:
             self._append_log("[LAUNCH] ARM64 runtime binary (bin/kr_core) not bundled yet; config synced.")
@@ -1388,8 +1461,6 @@ class KRAndroidLauncher:
         if self.cfg.get("video_backend", "auto") != "auto":
             env["SDL_VIDEODRIVER"] = self.cfg["video_backend"]
 
-        # Inside non-root Android nixport sandbox (/lib/ld-linux-aarch64.so.1 absent),
-        # invoke the bundled AArch64 binary explicitly via the rootfs dynamic loader.
         fxd_root = Path(os.environ.get("FXD_ROOT", "/data/user/0/ro.cobrabm.fexdroid/files/rootfs"))
         loader = fxd_root / "usr" / "lib" / "aarch64-linux-gnu" / "ld-linux-aarch64.so.1"
         lib_parts = []
@@ -1407,7 +1478,6 @@ class KRAndroidLauncher:
         else:
             cmd = game_args
 
-        # Run from DATA_DIR/bin so shadPS4 activates portable mode (./user/)
         run_cwd = self.data_dir / "bin"
         run_cwd.mkdir(parents=True, exist_ok=True)
 
@@ -1415,6 +1485,8 @@ class KRAndroidLauncher:
         self._append_log(f"[LAUNCH] Executing: {' '.join(cmd)}")
         self.game_running = True
         self._build_ui()
+
+        t_start = time.monotonic()
 
         def run_proc() -> None:
             rc = -1
@@ -1429,6 +1501,8 @@ class KRAndroidLauncher:
             except Exception as exc:
                 self.root.after(0, lambda e=exc: self._append_log(f"[LAUNCH ERROR] {e}"))
             finally:
+                dur = time.monotonic() - t_start
+                session_tracker.record_session(self.data_dir, dur, rc)
                 self.root.after(0, lambda code=rc: self._on_game_exit(code))
 
         threading.Thread(target=run_proc, daemon=True).start()
@@ -1445,15 +1519,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     root = tk.Tk()
-    app = KRAndroidLauncher(root)
+    app = KRAndroidLauncher(root, skip_network=args.smoke_test)
     if args.smoke_test:
         for tab in ("play", "patch", "saves", "trophies", "settings"):
             app._switch_tab(tab)
             root.update_idletasks()
         app._toggle_theme()
+        app._cycle_language()
         root.update_idletasks()
         root.destroy()
-        print("[SMOKE-TEST] Clean UI v1.0.0 launcher initialized & rendered all 5 tabs + Dark/Light theme OK.")
+        print("[SMOKE-TEST] Clean UI v1.0.0 launcher initialized & rendered all 5 tabs + Dark/Light + 5-Lang OK.")
         return 0
 
     root.mainloop()

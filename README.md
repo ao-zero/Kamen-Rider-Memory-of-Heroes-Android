@@ -44,15 +44,16 @@ Featuring the heroic trio:
 
 ## Key Features
 
-- **Clean UI Launcher v1.0.0 (Dark & Light Mode):** Minimalist interface inspired by [XSEmu](https://github.com/zortos293/xsemu) built in pure Python `tkinter` (zero external dependencies). Automatically switches to fullscreen touch-adaptive scaling inside `nixport` (`FEXDROID_PRESENT`).
+- **Clean UI Launcher v1.0.0 (Dark & Light Mode, 5 Languages):** Minimalist interface inspired by [XSEmu](https://github.com/zortos293/xsemu) built in pure Python `tkinter` (zero external dependencies) with instant **5-language support** (`ID`, `EN`, `ES`, `PT-BR`, `PT-PT`). Automatically switches to fullscreen touch-adaptive scaling inside `nixport` (`FEXDROID_PRESENT`).
 - **Built-in Indonesian Subtitle Patch (Bakka Sub x AO Zero):**
   - 1-click toggle for **5,993 translated strings** (`help_list`, `menu_text`, `mission_talk`, `name_text`) in `CUSA17374/Media/sharedassets0.assets`.
   - Pure-Python Unity `2017.4.40f1` `SerializedFile` patcher with automatic untouched vanilla backup stored persistently in `home/kr_moh/bin/user/vanilla_backup/`, allowing instant restore back to **Original (EN/JP)** anytime.
-- **Mobile Performance Presets (`540p / 720p / 1080p` & `30 / 60 FPS`):**
-  - Automatic `config.json` sync (`vblank_frequency` 60 Hz for 30 FPS Locked or 120 Hz for 60 FPS Native Unlock, `Mailbox`, `async_shader_compilation`, `FSR + RCAS`, and `pipeline_cache_enabled`).
+- **1-Click Mobile Auto-Preset & Performance Tuning (`540p / 720p / 1080p` & `30 / 60 FPS`):**
+  - Automatic hardware detection (SoC, RAM, storage, Vulkan Turnip ICD, shader cache size) with 1-click **Auto-Preset** and `config.json` sync (`vblank_frequency` 60/120 Hz, `Mailbox`, `async_shader_compilation`, `FSR + RCAS`, `pipeline_cache_enabled`).
   - Automatic input conflict protection: forces `mouse_to_joystick = none` when `FEXDROID_PRESENT` is active so virtual touch analog controls never clash with pointer events.
+- **1-Click Diagnostic ZIP Exporter & Update Checker:** Packages device specs, `launcher.ini`, `config.json`, `session_stats.json`, `launch.log`, and `shad_log.txt` into 1 `.zip` for easy bug reporting, plus built-in GitHub Releases update checker & `.nixport.zip` downloader.
+- **Playtime Tracker, Auto-Backup Saves & 50 Bilingual Trophies:** Tracks total playtime and last session status, creates rolling auto-backups (keep 5) before launch, supports Zip-Slip-safe `.zip` save imports, and ships the official 50-trophy PS4 catalog.
 - **Ready-to-Play Touch Virtual Gamepad (`virtualkeys.json`):** Custom landscape touch layout tuned for Kamen Rider combat (`L1/L2`, `R1/R2`, diamond `△○×□`, Dual Analog Sticks, D-Pad, Map, Options), imported automatically by `nixport`.
-- **Savegame Manager & 50 Bilingual Trophies:** Portable timestamped `.zip` save backup/restore under `home/kr_moh/` plus the full official 50-trophy PS4 catalog (English & Bahasa Indonesia).
 - **Full `nixport.port.v1` Integration:** Implements `AppRun` + `entry.sh` + `entry_main.py` verbs (`launcher`, `game`, `info`, `config`, `check`) with dynamic JSON schema support.
 
 ---

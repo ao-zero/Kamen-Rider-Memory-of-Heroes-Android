@@ -78,6 +78,8 @@ DEVICE_DEFAULTS: Dict[str, str] = {
     "video_backend": "auto",
     "audio_volume": "100",
     "deadzone": "8",
+    "auto_backup_saves": "true",
+    "check_updates_startup": "true",
     "indo_patch": "false",
     "language": "id",
     "theme": "dark",
@@ -88,8 +90,12 @@ BOOL_KEYS = (
     "show_fps",
     "fsr_enabled",
     "async_shaders",
+    "auto_backup_saves",
+    "check_updates_startup",
     "indo_patch",
 )
+
+SUPPORTED_LANGUAGES = ("id", "en", "es", "pt-BR", "pt-PT")
 
 COMMON_ANDROID_GAME_CANDIDATES = (
     "/storage/emulated/0/Games/CUSA17374",
@@ -259,10 +265,8 @@ def normalize_config(cfg: Dict[str, str]) -> Dict[str, str]:
     matched_vsync = next((v for v in VSYNC_OPTIONS if v.lower() == vsync.lower()), "Mailbox")
     out["vsync_mode"] = matched_vsync
 
-    if out.get("language", "id").lower() not in ("id", "en"):
-        out["language"] = "id"
-    else:
-        out["language"] = out["language"].lower()
+    lang_map = {k.lower(): k for k in SUPPORTED_LANGUAGES}
+    out["language"] = lang_map.get(out.get("language", "id").lower(), "id")
 
     if out.get("theme", "dark").lower() not in ("dark", "light"):
         out["theme"] = "dark"
@@ -521,6 +525,46 @@ def clear_shader_cache(data_dir: Optional[Path] = None) -> dict:
         "removed_files": removed_files,
         "freed_mb": round(freed_bytes / (1024 * 1024), 2),
     }
+
+
+def clean_temp_files(data_dir: Optional[Path] = None) -> dict:
+    """Remove temporary buffers and leftover .tmp/.part files under DATA_DIR."""
+    d = ensure_data_layout(data_dir)
+    removed = 0
+    for target in (d / "bin" / "user" / "temp", d / "downloads"):
+        if not target.exists():
+            continue
+        for item in list(target.iterdir()):
+            try:
+                if item.is_file() and (target.name == "temp" or item.suffix in (".part", ".tmp")):
+                    item.unlink(missing_ok=True)
+                    removed += 1
+                elif item.is_dir() and target.name == "temp":
+                    shutil.rmtree(item, ignore_errors=True)
+                    removed += 1
+            except Exception:
+                pass
+    for tmp in d.rglob("*.tmp"):
+        try:
+            tmp.unlink(missing_ok=True)
+            removed += 1
+        except Exception:
+            pass
+    return {"success": True, "removed": removed}
+
+
+def reset_to_defaults(data_dir: Optional[Path] = None, keep_game_dir: bool = True) -> Dict[str, str]:
+    """Reset launcher.ini, config.json, and input_config back to mobile factory defaults."""
+    d = ensure_data_layout(data_dir)
+    current = load_android_config(d)
+    fresh = dict(DEVICE_DEFAULTS)
+    if keep_game_dir and current.get("game_dir"):
+        fresh["game_dir"] = current["game_dir"]
+    if current.get("indo_patch"):
+        fresh["indo_patch"] = current["indo_patch"]
+    saved = save_android_config(d, fresh)
+    sync_android_engine_config(d, saved)
+    return saved
 
 
 def render_summary(cfg: Dict[str, str]) -> str:
