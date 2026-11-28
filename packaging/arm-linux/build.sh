@@ -73,7 +73,7 @@ DESKTOP
 if [[ -x "$runtime_stage/bin/kr_core" ]]; then
     install -m 755 "$runtime_stage/bin/kr_core" "$appdir/bin/kr_core"
     if [[ -d "$runtime_stage/lib" ]]; then
-        cp -R "$runtime_stage/lib/." "$appdir/lib/"
+        cp -a "$runtime_stage/lib/." "$appdir/lib/"
     fi
 fi
 

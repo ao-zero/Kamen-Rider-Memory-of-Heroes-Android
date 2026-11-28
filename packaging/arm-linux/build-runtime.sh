@@ -44,7 +44,7 @@ from pathlib import Path
 
 src = Path(sys.argv[1])
 
-# 1) Guard bachata_audio_out.cpp so ENABLE_BACHATA_RUNTIME=OFF links cleanly
+# 1) Guard bachata_audio_out.cpp and driver.cpp ReportPresentedFrame() when ENABLE_BACHATA_RUNTIME=OFF
 cm = src / "CMakeLists.txt"
 cm_txt = cm.read_text(encoding="utf-8")
 target_audio = "              src/core/libraries/audio/bachata_audio_out.cpp\n"
@@ -56,6 +56,21 @@ if target_audio in cm_txt:
     )
     cm.write_text(cm_txt, encoding="utf-8")
     print("[patch] Guarded bachata_audio_out.cpp behind ENABLE_BACHATA_RUNTIME")
+
+vo_drv = src / "src" / "core" / "libraries" / "videoout" / "driver.cpp"
+vo_txt = vo_drv.read_text(encoding="utf-8")
+assert "    Platform::Bachata::ReportPresentedFrame();\n" in vo_txt, "ReportPresentedFrame not found in driver.cpp"
+vo_txt = vo_txt.replace(
+    '#include "platform/bachata/runtime_client.h"\n',
+    '#ifdef ENABLE_BACHATA_RUNTIME\n#include "platform/bachata/runtime_client.h"\n#endif\n',
+    1,
+).replace(
+    "    Platform::Bachata::ReportPresentedFrame();\n",
+    "#ifdef ENABLE_BACHATA_RUNTIME\n    Platform::Bachata::ReportPresentedFrame();\n#endif\n",
+    1,
+)
+vo_drv.write_text(vo_txt, encoding="utf-8")
+print("[patch] Guarded Platform::Bachata::ReportPresentedFrame() in videoout/driver.cpp")
 
 # 2) Build bundled SDL3 as a SHARED library (libSDL3.so.0) with dynamic PulseAudio enabled
 ext_cm = src / "externals" / "CMakeLists.txt"
