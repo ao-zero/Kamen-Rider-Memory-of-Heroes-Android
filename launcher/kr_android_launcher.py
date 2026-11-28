@@ -1468,10 +1468,21 @@ class KRAndroidLauncher:
             lib_parts.append(str(self.app_dir / "lib"))
         if (fxd_root / "usr" / "lib" / "aarch64-linux-gnu").is_dir():
             lib_parts.append(str(fxd_root / "usr" / "lib" / "aarch64-linux-gnu"))
+        if (fxd_root / "usr" / "lib").is_dir():
+            lib_parts.append(str(fxd_root / "usr" / "lib"))
         if env.get("LD_LIBRARY_PATH"):
             lib_parts.append(env["LD_LIBRARY_PATH"])
         if lib_parts:
             env["LD_LIBRARY_PATH"] = ":".join(lib_parts)
+
+        # Restore nixport virtual gamepad preload ONLY for the game binary (not Python)
+        pad_preload = env.get("KR_SAVED_LD_PRELOAD", "").strip()
+        if not pad_preload:
+            pad_so = fxd_root / "usr" / "lib" / "fexdroid" / "libfexpad.so"
+            if pad_so.is_file():
+                pad_preload = str(pad_so)
+        if pad_preload:
+            env["LD_PRELOAD"] = pad_preload
 
         if sys.platform != "win32" and not Path("/lib/ld-linux-aarch64.so.1").exists() and loader.is_file():
             cmd = [str(loader), "--library-path", env.get("LD_LIBRARY_PATH", ""), *game_args]

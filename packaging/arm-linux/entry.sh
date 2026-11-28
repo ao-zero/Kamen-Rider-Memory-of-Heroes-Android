@@ -5,10 +5,20 @@
 # Rule: stdout MUST be pure JSON for `config` and `info`; diagnostics go to stderr.
 set -eu
 
+# Save host LD_PRELOAD (e.g. libfexpad.so) and clear it for shell/Python helper processes
+# so fexpad does not stall dash/mkdir/python3.13 waiting 30s for SDL3.
+if [ -n "${LD_PRELOAD:-}" ] && [ -z "${KR_SAVED_LD_PRELOAD:-}" ]; then
+    export KR_SAVED_LD_PRELOAD="$LD_PRELOAD"
+fi
+unset LD_PRELOAD
+
 TREE="${APPDIR:-$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
 PKG="$(dirname "$TREE")"
-HOME_ROOT="${HOME:-$PKG/home}"
-DATA="${KR_DATA_DIR:-$HOME_ROOT/kr_moh}"
+if [ -n "${FEXDROID_PRESENT:-}" ] || [ -d "$PKG/home" ]; then
+    DATA="${KR_DATA_DIR:-$PKG/home/kr_moh}"
+else
+    DATA="${KR_DATA_DIR:-${HOME:-$PKG/home}/kr_moh}"
+fi
 CONFIG="${KR_CONFIG:-$DATA/launcher.ini}"
 HOST="${FXD_ROOT:-/data/user/0/ro.cobrabm.fexdroid/files/rootfs}"
 LOADER="$HOST/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1"
@@ -18,7 +28,7 @@ command -v "$PY_BIN" >/dev/null 2>&1 || PY_BIN="python3"
 
 run_py() {
     if [ -x "$LOADER" ] && [ -x "$HOST/usr/bin/python3.13" ]; then
-        LD_LIBRARY_PATH="$HOST/usr/lib/aarch64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+        LD_LIBRARY_PATH="$HOST/usr/lib/aarch64-linux-gnu:$HOST/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
             "$LOADER" "$HOST/usr/bin/python3.13" "$@"
     else
         "$PY_BIN" "$@"
@@ -27,7 +37,7 @@ run_py() {
 
 exec_py() {
     if [ -x "$LOADER" ] && [ -x "$HOST/usr/bin/python3.13" ]; then
-        LD_LIBRARY_PATH="$HOST/usr/lib/aarch64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+        LD_LIBRARY_PATH="$HOST/usr/lib/aarch64-linux-gnu:$HOST/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
             exec "$LOADER" "$HOST/usr/bin/python3.13" "$@"
     else
         exec "$PY_BIN" "$@"
@@ -37,13 +47,18 @@ exec_py() {
 exec_arm64_bin() {
     BIN_PATH="$1"
     shift
-    LIB_PATH="$TREE/lib:$HOST/usr/lib/aarch64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    LIB_PATH="$TREE/lib:$HOST/usr/lib/aarch64-linux-gnu:$HOST/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    PAD_PRELOAD="${KR_SAVED_LD_PRELOAD:-}"
+    if [ -z "$PAD_PRELOAD" ] && [ -f "$HOST/usr/lib/fexdroid/libfexpad.so" ]; then
+        PAD_PRELOAD="$HOST/usr/lib/fexdroid/libfexpad.so"
+    fi
+    if [ -n "$PAD_PRELOAD" ]; then
+        export LD_PRELOAD="$PAD_PRELOAD"
+    fi
     if [ ! -e "/lib/ld-linux-aarch64.so.1" ] && [ -x "$LOADER" ]; then
         LD_LIBRARY_PATH="$LIB_PATH" exec "$LOADER" --library-path "$LIB_PATH" "$BIN_PATH" "$@"
     fi
-    if [ -d "$TREE/lib" ]; then
-        export LD_LIBRARY_PATH="$TREE/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    fi
+    export LD_LIBRARY_PATH="$LIB_PATH"
     exec "$BIN_PATH" "$@"
 }
 
@@ -56,6 +71,30 @@ setup_env() {
         export KR_DEVICE_UI="${KR_DEVICE_UI:-1}"
     fi
     export XDG_DATA_HOME="$DATA/bin/user"
+
+    # Point Tcl/Tk and XKB to nixport's rootfs (non-root Android has no /usr)
+    if [ -z "${TCL_LIBRARY:-}" ]; then
+        for cand in "$HOST/usr/share/tcltk/tcl8.6" "$HOST/usr/lib/tcl8.6"; do
+            if [ -d "$cand" ]; then
+                export TCL_LIBRARY="$cand"
+                break
+            fi
+        done
+    fi
+    if [ -z "${TK_LIBRARY:-}" ]; then
+        for cand in "$HOST/usr/share/tcltk/tk8.6" "$HOST/usr/lib/tk8.6"; do
+            if [ -d "$cand" ]; then
+                export TK_LIBRARY="$cand"
+                break
+            fi
+        done
+    fi
+    if [ -z "${XKB_CONFIG_ROOT:-}" ] && [ -d "$HOST/usr/share/X11/xkb" ]; then
+        export XKB_CONFIG_ROOT="$HOST/usr/share/X11/xkb"
+    fi
+    if [ -z "${FONTCONFIG_PATH:-}" ] && [ -d "$HOST/etc/fonts" ]; then
+        export FONTCONFIG_PATH="$HOST/etc/fonts"
+    fi
     if [ -d "$TREE/lib" ]; then
         export LD_LIBRARY_PATH="$TREE/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     fi
@@ -70,7 +109,10 @@ setup_env
 
 case "$VERB" in
     launcher)
-        exec_py "$TREE/launcher/kr_android_launcher.py" "$@"
+        {
+            echo "=== launcher $(date) DISPLAY=${DISPLAY:-unset} TCL_LIBRARY=${TCL_LIBRARY:-unset} TK_LIBRARY=${TK_LIBRARY:-unset} ==="
+        } >> "$DATA/logs/launch.log" 2>&1 || true
+        exec_py "$TREE/launcher/kr_android_launcher.py" "$@" 2>> "$DATA/logs/launch.log"
         ;;
 
     game)
